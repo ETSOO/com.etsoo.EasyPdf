@@ -11,7 +11,6 @@ await using var subset = await EasyFont.CreateSubsetAsync(fontStream, "中国智
 
 await using var fileStream = File.OpenWrite("D:\\subset.ttf");
 
-subset.Position = 0;
 await subset.CopyToAsync(fileStream);
 
 Console.WriteLine("Done!");

@@ -118,6 +118,7 @@ namespace com.etsoo.EasyPdf.Font
 
                 rf.Close();
 
+                stream.Position = 0;
                 return stream;
             });
         }
