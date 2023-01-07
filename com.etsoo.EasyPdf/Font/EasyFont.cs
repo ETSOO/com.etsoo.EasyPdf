@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace com.etsoo.EasyPdf.Font
@@ -41,9 +40,15 @@ namespace com.etsoo.EasyPdf.Font
             CMAP, CVT, FPGM, GLYF, HEAD, HHEA, HMTX, LOCA, MAXP, NAME, OS2, POST, PREP
         };
 
-        internal static int[] entrySelectors = { 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4 };
-
-        public static async Task<MemoryStream> CreateSubsetAsync(Stream fontStream, IEnumerable<char> includedChars)
+        /// <summary>
+        /// Create font subset
+        /// 创建字体子集
+        /// </summary>
+        /// <param name="fontStream">Font stream</param>
+        /// <param name="includedChars">Included characters</param>
+        /// <param name="familyName">Specific family name (TTC file contains multiple fonts), default is the first font</param>
+        /// <returns>Result</returns>
+        public static async Task<MemoryStream> CreateSubsetAsync(Stream fontStream, IEnumerable<char> includedChars, string? familyName = null)
         {
             // Unique characters
             includedChars = includedChars.Distinct();
@@ -69,7 +74,8 @@ namespace com.etsoo.EasyPdf.Font
                     // Fonts under the family
                     var numFonts = rf.ReadInt();
 
-                    // Output
+                    /*
+                    // Output TTCF
                     stream.Write(Encoding.ASCII.GetBytes(TTCF));
                     stream.Write(versionBytes);
                     stream.Write(GetBytes(numFonts));
@@ -108,12 +114,35 @@ namespace com.etsoo.EasyPdf.Font
                     {
                         stream.Write(GetBytes(f));
                     }
+                    */
+
+                    // Array of offsets to the TableDirectory for each font from the beginning of the file
+                    var offsets = new int[numFonts];
+                    for (var f = 0; f < numFonts; f++)
+                    {
+                        offsets[f] = rf.ReadInt();
+                    }
+
+                    // Parse fonts
+                    for (var f = 0; f < numFonts; f++)
+                    {
+                        var offset = offsets[f];
+
+                        rf.Seek(offset);
+                        var font = ParseFont(rf, familyName);
+                        if (font != null)
+                        {
+                            await font.ToSubsetAsync(stream, includedChars);
+                            break;
+                        }
+                    }
                 }
                 else
                 {
                     rf.Seek(0);
-                    var font = ParseFont(rf);
-                    await font.ToSubsetAsync(stream, includedChars);
+                    var font = ParseFont(rf, familyName);
+                    if (font != null)
+                        await font.ToSubsetAsync(stream, includedChars);
                 }
 
                 rf.Close();
@@ -123,7 +152,7 @@ namespace com.etsoo.EasyPdf.Font
             });
         }
 
-        private static EasyFont ParseFont(PdfRandomAccessor rf)
+        private static EasyFont? ParseFont(PdfRandomAccessor rf, string? familyName = null)
         {
             // sfntVersion
             // 0x00010000 or 0x4F54544F ('OTTO')
@@ -149,6 +178,17 @@ namespace com.etsoo.EasyPdf.Font
                 // Offset from beginning of font file
                 // Length of this table
                 tables[tag] = new OffsetItem(rf.ReadUInt(), rf.ReadUInt(), rf.ReadUInt());
+            }
+
+            // Parse names
+            if (!string.IsNullOrEmpty(familyName))
+            {
+                var names = ParseNameTable(tables, rf);
+                if (!names.Any(
+                    n => (n.NameId == FontNameId.PostScriptName || n.NameId == FontNameId.FullName)
+                    && n.Name.Equals(familyName, StringComparison.OrdinalIgnoreCase)
+                  )
+                ) return null;
             }
 
             var head = ParseHeadTable(tables, rf);
@@ -456,6 +496,75 @@ namespace com.etsoo.EasyPdf.Font
             return locaTable;
         }
 
+        // name - Naming Table
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/name
+        private static FontName[] ParseNameTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessor rf)
+        {
+            if (!tables.TryGetValue("name", out var tl))
+            {
+                throw new Exception($"Table 'name' does not exist");
+            }
+
+            rf.Seek(tl.Offset);
+
+            var version = rf.ReadUnsignedShort();
+            var count = rf.ReadUnsignedShort();
+            var storageOffset = rf.ReadUnsignedShort();
+
+            var names = new FontName[count];
+
+            for (var k = 0; k < count; k++)
+            {
+                // https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#encoding-records-and-encodings
+
+                var platform = GetPlatform(rf.ReadUnsignedShort());
+
+                var encodingID = rf.ReadUnsignedShort();
+                var languageID = rf.ReadUnsignedShort();
+
+                var nameID = rf.ReadUnsignedShort();
+                if (!Enum.TryParse<FontNameId>(nameID.ToString(), out var nameIdValue))
+                {
+                    nameIdValue = FontNameId.Reserved;
+                }
+
+                var length = rf.ReadUnsignedShort();
+                var offset = rf.ReadUnsignedShort();
+
+                // Current position
+                var pos = (int)rf.FilePointer;
+
+                // Seek string position
+                rf.Seek(tl.Offset + storageOffset + offset);
+
+                string name;
+                if (platform == FontNamePlatform.Unicode || (platform == FontNamePlatform.Macintosh && encodingID > 0) || platform == FontNamePlatform.Windows || (platform == FontNamePlatform.ISO && encodingID == 1))
+                {
+                    // All string data for platform 3 (windows) must be encoded in UTF-16BE
+                    // Platform = ISO, encoding id = 0 (7-bit ASCII), 1 = ISO 10646, 2 = ISO 8859-1
+                    name = rf.ReadUnicodeString(length);
+                }
+                else
+                {
+                    name = rf.ReadString(length);
+                }
+
+                // Back to previous reading position
+                rf.Seek(pos);
+
+                names[k] = new FontName
+                {
+                    Platform = platform,
+                    EncodingID = encodingID,
+                    LanguageID = languageID,
+                    NameId = nameIdValue,
+                    Name = name
+                };
+            }
+
+            return names;
+        }
+
         private static byte[] GetBytes(short n)
         {
             return new[] { (byte)(n >> 8), (byte)n };
@@ -645,10 +754,11 @@ namespace com.etsoo.EasyPdf.Font
             // Tables (2)
             aw.Write(GetBytes(FilledTables));
 
-            // 6 = 2 x 3
-            var entrySelector = (ushort)entrySelectors[FilledTables];
-            var searchRange = (ushort)((1 << entrySelector) * 16);
-            var rangeShift = (ushort)((FilledTables - (1 << entrySelector)) * 16);
+            // 6 = 2 x 3, TableDirectory
+            // https://learn.microsoft.com/en-us/typography/opentype/spec/otff
+            var entrySelector = (ushort)Math.Floor(Math.Log(FilledTables, 2));
+            var searchRange = (ushort)(Math.Pow(2, entrySelector) * 16);
+            var rangeShift = (ushort)((FilledTables * 16) - searchRange);
             aw.Write(GetBytes(entrySelector));
             aw.Write(GetBytes(searchRange));
             aw.Write(GetBytes(rangeShift));
