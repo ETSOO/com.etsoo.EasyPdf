@@ -97,6 +97,7 @@ namespace com.etsoo.EasyPdf.Document
                         var chars = font.SubsetChars.Concat(ascii);
 
                         await using var subset = await EasyFont.CreateSubsetAsync(stream, chars, font.Name);
+
                         if (string.IsNullOrEmpty(customName)) FontManager.RegisterFont(subset);
                         else FontManager.RegisterFontWithCustomName(customName, subset);
                     }

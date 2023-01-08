@@ -21,7 +21,6 @@ namespace com.etsoo.EasyPdf.Font
         private const string TTCF = "ttcf";
 
         private const string CMAP = "cmap";
-        private const string CVT = "cvt";
         private const string FPGM = "fpgm";
         private const string GLYF = "glyf";
         private const string HEAD = "head";
@@ -34,10 +33,10 @@ namespace com.etsoo.EasyPdf.Font
         private const string POST = "post";
         private const string PREP = "prep";
 
-        // Required tables
+        // Tables to deal
         // https://learn.microsoft.com/en-us/typography/opentype/spec/otff#font-tables
         private static readonly string[] requiredTables = {
-            CMAP, CVT, FPGM, GLYF, HEAD, HHEA, HMTX, LOCA, MAXP, NAME, OS2, POST, PREP
+            CMAP, FPGM, GLYF, HEAD, HHEA, HMTX, LOCA, MAXP, NAME, OS2, POST, PREP
         };
 
         /// <summary>
@@ -687,8 +686,8 @@ namespace com.etsoo.EasyPdf.Font
             var glyfTable = Tables[GLYF];
             var glyfData = glyfTable.Data!;
 
-            var glen = chars.Count();
-            var glyhs = chars.Select(GetGlyphId).OrderBy(g => g).ToArray();
+            var glyhs = chars.Select(GetGlyphId).Distinct().OrderBy(g => g).ToArray();
+            var glen = glyhs.Length;
 
             var locaLen = Locas.Length;
 

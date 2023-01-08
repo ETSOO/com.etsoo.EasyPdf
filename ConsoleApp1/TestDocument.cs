@@ -1,4 +1,5 @@
 ﻿using com.etsoo.EasyPdf.Document;
+using QuestPDF;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -9,8 +10,12 @@ namespace ConsoleApp1
     {
         public async Task SetupAsync()
         {
+            Settings.CheckIfAllTextGlyphsAreAvailable = false;
+            Settings.EnableCaching = true;
+            Settings.EnableDebugging = false;
+
             var fonts = new[] {
-                new EasyPdfSetupFont { SystemFont = "simsun.ttc", SubsetChars = "UnderlineItalicBoldText2X-Y 中文" }
+                new EasyPdfSetupFont { SystemFont = "msyh.ttc", SubsetChars = "UnderlineItalicBoldText2X-Y 中文" }
             };
             await base.SetupAsync(fonts);
         }
@@ -25,7 +30,7 @@ namespace ConsoleApp1
                     page.PageColor(Colors.White);
 
                     // Microsoft YaHei, SimSum
-                    page.DefaultTextStyle(x => x.FontFamily("新宋体").FontSize(12));
+                    page.DefaultTextStyle(x => x.FontSize(12).FontFamily("Microsoft YaHei"));
 
                     page.Content().Text(text =>
                     {

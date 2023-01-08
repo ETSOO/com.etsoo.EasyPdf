@@ -8,12 +8,13 @@ Console.WriteLine("Start...");
 var fontFolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
 
 // simsun.ttc
-await using var fontStream = File.OpenRead($"{fontFolder}\\simsun.ttc");
+await using var fontStream = File.OpenRead($"{fontFolder}\\msyh.ttc");
+//await using var fontStream = File.OpenRead($"D:\\subset.ttf");
 
 // Add all ASCII characters
 var ascii = Enumerable.Range(0, 256).Select(i => (char)i).Where(c => !char.IsControl(c));
 var chars = "中国智造，慧及全球，中文，青岛亿速思维网络科技有限公司".Concat(ascii);
-await using var subset = await EasyFont.CreateSubsetAsync(fontStream, chars, "新宋体");
+await using var subset = await EasyFont.CreateSubsetAsync(fontStream, chars);
 
 await using var fileStream = File.OpenWrite("D:\\subset.ttf");
 
