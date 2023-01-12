@@ -12,13 +12,18 @@ var fontFolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
 await using var fontStream = File.OpenRead($"{fontFolder}\\msyh.ttc");
 await using var subset = await EasyFont.CreateSubsetAsync(fontStream, "青岛亿速思维网络科技有限公司");
 
+// Register the font
 FontManager.RegisterFont(subset)
-// FontManager.RegisterFontWithCustomName("msyh", subset);
 
 // When create a page
 page.DefaultTextStyle(x => x.FontSize(12).Fallback(f => f.FontFamily("Microsoft YaHei")));
+
+// Or register the font as default font and with a custom name
+FontManager.RegisterFontWithCustomName("custom", subset);
+page.DefaultTextStyle(x => x.FontSize(12).FontFamily("custom"));
 ```
 
 With the font "Microsoft YaHei" subset, file size reduced to 125K from 11.8M. The only tricky thing is to generate the included characters.
 
 1. 2023/01/07, found a similiar issue of https://github.com/QuestPDF/QuestPDF/issues/162. Bold / italic styles have no effect after applying the feature.
+2. 2023/01/12, found a cache issue. With the subfont and default font name may mess the output. The solution is to register the font with a unique custom name related with the data model.
