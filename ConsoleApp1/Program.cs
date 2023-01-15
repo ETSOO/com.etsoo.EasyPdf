@@ -2,6 +2,7 @@
 using com.etsoo.EasyPdf.Font;
 using ConsoleApp1;
 using QuestPDF.Fluent;
+using SkiaSharp;
 
 Console.WriteLine("Start...");
 
@@ -23,8 +24,14 @@ await subset.CopyToAsync(fileStream);
 await fileStream.DisposeAsync();
 
 Console.WriteLine("Create PDF...");
-var document = new TestDocument();
-await document.SetupAsync();
-document.GeneratePdf("D:\\test.pdf");
+var document1 = new TestDocument("第一");
+await document1.SetupAsync();
+document1.GeneratePdf("D:\\test1.pdf");
+
+var document2 = new TestDocument("第二");
+await document2.SetupAsync();
+document2.GeneratePdf("D:\\test2.pdf");
+
+Console.WriteLine($"Font cached: {SKGraphics.GetFontCacheUsed()}; Resource cached: {SKGraphics.GetResourceCacheTotalBytesUsed()}");
 
 Console.WriteLine("Done!");

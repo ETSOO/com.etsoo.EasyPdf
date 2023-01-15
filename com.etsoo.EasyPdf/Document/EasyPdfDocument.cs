@@ -1,6 +1,7 @@
 ﻿using com.etsoo.EasyPdf.Font;
 using QuestPDF.Drawing;
 using QuestPDF.Infrastructure;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -52,6 +53,17 @@ namespace com.etsoo.EasyPdf.Document
     /// </summary>
     public abstract class EasyPdfDocument : IDocument
     {
+        /// <summary>
+        /// Set no cache
+        /// 设置无缓存
+        /// </summary>
+        public static void SetNoCache()
+        {
+            SKGraphics.PurgeAllCaches();
+            SKGraphics.SetResourceCacheTotalByteLimit(0);
+            SKGraphics.SetFontCacheLimit(0);
+        }
+
         /// <summary>
         /// Load system font
         /// 加载系统字体

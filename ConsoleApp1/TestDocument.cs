@@ -8,6 +8,21 @@ namespace ConsoleApp1
 {
     internal class TestDocument : EasyPdfDocument
     {
+        static TestDocument()
+        {
+            SetNoCache();
+        }
+
+        private readonly string content;
+        private readonly string fontName;
+
+        public TestDocument(string content)
+        {
+            this.content = content;
+            // fontName = "f1";
+            fontName = Path.GetRandomFileName();
+        }
+
         public async Task SetupAsync()
         {
             Settings.CheckIfAllTextGlyphsAreAvailable = false;
@@ -15,7 +30,7 @@ namespace ConsoleApp1
             Settings.EnableDebugging = false;
 
             var fonts = new[] {
-                new EasyPdfSetupFont { SystemFont = "msyh.ttc", SubsetChars = "UnderlineItalicBoldText2X-Y 中文" }
+                new EasyPdfSetupFont { SystemFont = "msyh.ttc", CustomName = fontName, SubsetChars = "中文" + content }
             };
             await base.SetupAsync(fonts);
         }
@@ -30,10 +45,11 @@ namespace ConsoleApp1
                     page.PageColor(Colors.White);
 
                     // Microsoft YaHei, SimSum
-                    page.DefaultTextStyle(x => x.FontSize(12).FontFamily("Microsoft YaHei"));
+                    page.DefaultTextStyle(x => x.FontSize(12).FontFamily(fontName));
 
                     page.Content().Text(text =>
                     {
+                        text.Line(content);
                         text.Line("Bold Text 中文").Bold();
                         text.Line("Italic Text 中文").Italic();
                         text.Line("Underline Text").Underline();
