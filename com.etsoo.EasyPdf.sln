@@ -5,7 +5,9 @@ VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "com.etsoo.EasyPdf", "com.etsoo.EasyPdf\com.etsoo.EasyPdf.csproj", "{B7BBFB70-DF1A-4313-B385-F5AC36AEC43B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{6F786E65-8AE3-4B30-AE1F-256C1EEE3D01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{6F786E65-8AE3-4B30-AE1F-256C1EEE3D01}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "com.etsoo.EasyPdf.Tests", "com.etsoo.EasyPdf.Tests\com.etsoo.EasyPdf.Tests.csproj", "{524264FE-DBA5-4F0B-8CB0-8A8F800F81C8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{6F786E65-8AE3-4B30-AE1F-256C1EEE3D01}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F786E65-8AE3-4B30-AE1F-256C1EEE3D01}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F786E65-8AE3-4B30-AE1F-256C1EEE3D01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{524264FE-DBA5-4F0B-8CB0-8A8F800F81C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{524264FE-DBA5-4F0B-8CB0-8A8F800F81C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{524264FE-DBA5-4F0B-8CB0-8A8F800F81C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{524264FE-DBA5-4F0B-8CB0-8A8F800F81C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

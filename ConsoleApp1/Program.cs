@@ -1,37 +1,49 @@
-﻿// See https://aka.ms/new-console-template for more information
-using com.etsoo.EasyPdf.Font;
-using ConsoleApp1;
-using QuestPDF.Fluent;
-using SkiaSharp;
+﻿using com.etsoo.EasyPdf;
+using com.etsoo.EasyPdf.Content;
+using com.etsoo.EasyPdf.Support;
 
-Console.WriteLine("Start...");
+var path = "D:\\a.pdf";
+File.Delete(path);
 
-var fontFolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+// PDF document
+var stream = File.OpenWrite(path);
+var pdf = new PdfDocument(stream);
+pdf.Metadata.Title = "青岛亿速思维网络科技有限公司";
 
-// simsun.ttc
-await using var fontStream = File.OpenRead($"{fontFolder}\\msyh.ttc");
-//await using var fontStream = File.OpenRead($"D:\\subset.ttf");
+pdf.Style.FontSize = 12;
 
-// Add all ASCII characters
-var ascii = Enumerable.Range(0, 256).Select(i => (char)i).Where(c => !char.IsControl(c));
-var chars = "中国智造，慧及全球，中文，青岛亿速思维网络科技有限公司".Concat(ascii);
-await using var subset = await EasyFont.CreateSubsetAsync(fontStream, chars);
+// Fonts
+// await pdf.Fonts.LoadAsync("D:\\subset.ttf");
+await pdf.Fonts.LoadAsync("C:\\Windows\\Fonts\\simsun.ttc");
+pdf.Style.Font = "宋体";
 
-await using var fileStream = File.OpenWrite("D:\\subset.ttf");
+//await pdf.Fonts.LoadAsync("C:\\Windows\\Fonts\\msyh.ttc");
+//pdf.PageData.Font = "微软雅黑";
 
-await subset.CopyToAsync(fileStream);
+// Get writer and start writing
+var w = await pdf.GetWriterAsync();
+await w.NewPageAsync((page) =>
+{
+    page.Data.PageSize = PdfPageSize.A3;
+});
 
-await fileStream.DisposeAsync();
+// Paragraph
+var p = new PdfParagraph();
+p.Add("中国智造 - 青岛亿速思维网络科技有限公司");
+await w.AddAsync(p);
 
-Console.WriteLine("Create PDF...");
-var document1 = new TestDocument("第一");
-await document1.SetupAsync();
-document1.GeneratePdf("D:\\test1.pdf");
+var p1 = new PdfParagraph();
+p1.Style.FontStyle = PdfFontStyle.Bold;
+p1.Add("中国智造 - 青岛亿速思维网络科技有限公司 粗体");
+await w.AddAsync(p1);
 
-var document2 = new TestDocument("第二");
-await document2.SetupAsync();
-document2.GeneratePdf("D:\\test2.pdf");
+var p2 = new PdfParagraph();
+p2.Style.FontStyle = PdfFontStyle.Italic;
+p2.Add("中国智造 - 青岛亿速思维网络科技有限公司 斜体");
+await w.AddAsync(p2);
 
-Console.WriteLine($"Font cached: {SKGraphics.GetFontCacheUsed()}; Resource cached: {SKGraphics.GetResourceCacheTotalBytesUsed()}");
+// Close
+await pdf.CloseAsync();
 
 Console.WriteLine("Done!");
+Console.ReadLine();

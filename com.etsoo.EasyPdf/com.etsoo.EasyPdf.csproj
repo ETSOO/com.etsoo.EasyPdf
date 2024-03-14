@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net6.0;net7.0</TargetFrameworks>
-    <ImplicitUsings>disable</ImplicitUsings>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <ImplicitUsings>true</ImplicitUsings>
     <Nullable>enable</Nullable>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\etsoo.snk</AssemblyOriginatorKeyFile>
@@ -10,16 +10,17 @@
     <RepositoryUrl>https://github.com/ETSOO/com.etsoo.EasyPdf</RepositoryUrl>
     <Authors>ETSOO SmartERP NextGen Team</Authors>
     <Company>ETSOO / 亿速思维</Company>
-    <Copyright>Copyright © ETSOO 2004 - 2023</Copyright>
+    <Copyright>Copyright © ETSOO 2004 - 2024</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Description>ETSOO PDF Library
-亿速思维 PDF 库</Description>
+    <Description>ETSOO PDF Generation Library
+亿速思维 PDF 生成库</Description>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
     <AssemblyVersion>1.0.1.0</AssemblyVersion>
     <FileVersion>1.0.1.0</FileVersion>
     <PackageIcon>logo.png</PackageIcon>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,10 +31,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.1.0" />
-    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />
-    <PackageReference Include="QuestPDF" Version="2022.12.2" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
+    <InternalsVisibleTo Include="com.etsoo.EasyPdf.Tests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100bddab0ff3d4801b73b17be38dbd069cd2a9f7650392b890f34c614d71dff57e20b77904273cfeca50a77d554921a4168af6fc4cb25f81b11b7503a559bc180defbb93698932c239e9548e4f7a1e6c6892b94d55f9212f20d94d3d4fea36b73da529d1f7cdeb99c387dafe58934986711c9ee7693233c3bcfd88af5e6d1e531be" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="com.etsoo.HtmlUtils" Version="1.0.30" />
+    <PackageReference Include="com.etsoo.PureIO" Version="1.0.20" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
   </ItemGroup>
 
 </Project>
