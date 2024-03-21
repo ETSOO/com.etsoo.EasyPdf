@@ -1,16 +1,38 @@
-﻿namespace com.etsoo.EasyPdf.Content
+﻿using System.Drawing;
+
+namespace com.etsoo.EasyPdf.Content
 {
     /// <summary>
-    /// PDF style
-    /// PDF 样式
+    /// PDF style, all length units are in pixels
+    /// PDF 样式，所有长度单位均为像素
     /// </summary>
-    public class PdfStyle
+    /// <remarks>
+    /// Constructor
+    /// 构造函数
+    /// </remarks>
+    /// <param name="parent">Parent style</param>
+    public class PdfStyle(PdfStyle? parent = null)
     {
+        public const string PositonAbsolte = "absolute";
+        public const string PositonRelative = "relative";
+
         /// <summary>
         /// Parent style
         /// 父样式
         /// </summary>
-        public PdfStyle? Parent { get; init; }
+        public PdfStyle? Parent { get; set; } = parent;
+
+        /// <summary>
+        /// Background color
+        /// 背景颜色
+        /// </summary>
+        public PdfColor? BackgroundColor { get; set; }
+
+        /// <summary>
+        /// Border
+        /// 边框
+        /// </summary>
+        public PdfStyleBorder? Border { get; set; }
 
         /// <summary>
         /// Color
@@ -37,6 +59,18 @@
         public PdfFontStyle? FontStyle { get; set; }
 
         /// <summary>
+        /// Height
+        /// 高度
+        /// </summary>
+        public float? Height { get; set; }
+
+        /// <summary>
+        /// Positioned element's left distance
+        /// 定位元素的左边距离
+        /// </summary>
+        public float? Left { get; set; }
+
+        /// <summary>
         /// Letter spacing
         /// 字母间距
         /// </summary>
@@ -55,6 +89,12 @@
         public PdfStyleSpace? Padding { get; set; }
 
         /// <summary>
+        /// Position
+        /// 位置
+        /// </summary>
+        public string? Position { get; set; }
+
+        /// <summary>
         /// Text decoration
         /// 文字修饰
         /// </summary>
@@ -66,20 +106,92 @@
         /// </summary>
         public PdfTextStyle? TextStyle { get; set; }
 
+
+        /// <summary>
+        /// Positioned element's top distance
+        /// 定位元素的顶端距离
+        /// </summary>
+        public float? Top { get; set; }
+
+        /// <summary>
+        /// Width
+        /// 宽度
+        /// </summary>
+        public float? Width { get; set; }
+
         /// <summary>
         /// Word spacing
         /// 字间距
         /// </summary>
         public float? WordSpacing { get; set; }
 
-        /// <summary>
-        /// Constructor
-        /// 构造函数
-        /// </summary>
-        /// <param name="parent">Parent style</param>
-        public PdfStyle(PdfStyle? parent = null)
+        private T? CalculatePropertyValue<T>(Func<PdfStyle, T> propertySelector)
         {
-            Parent = parent;
+            PdfStyle? currentStyle = this;
+            while (currentStyle != null)
+            {
+                var value = propertySelector(currentStyle);
+                if (value != null)
+                {
+                    return value;
+                }
+                currentStyle = currentStyle.Parent;
+            }
+            return default;
+        }
+
+        public PdfStyle GetComputedStyle()
+        {
+            return new PdfStyle()
+            {
+                // Inherit
+                Color = CalculatePropertyValue((style) => style.Color),
+                Font = CalculatePropertyValue((style) => style.Font),
+                FontSize = CalculatePropertyValue((style) => style.FontSize),
+                FontStyle = CalculatePropertyValue((style) => style.FontStyle),
+                LetterSpacing = CalculatePropertyValue((style) => style.LetterSpacing),
+                TextDecoration = CalculatePropertyValue((style) => style.TextDecoration),
+                TextStyle = CalculatePropertyValue((style) => style.TextStyle),
+                WordSpacing = CalculatePropertyValue((style) => style.WordSpacing),
+
+                // Not inherit
+                BackgroundColor = BackgroundColor,
+                Border = Border,
+                Height = Height,
+                Left = Left,
+                Margin = Margin,
+                Padding = Padding,
+                Position = Position,
+                Top = Top,
+                Width = Width
+            };
+        }
+
+        /// <summary>
+        /// Get rectangle
+        /// 获取矩形
+        /// </summary>
+        /// <param name="size">Default size</param>
+        /// <returns>Result</returns>
+        public RectangleF GetRectangle(SizeF? size = null)
+        {
+            var width = Width?.PxToPt() ?? size?.Width ?? 0;
+            var height = Height?.PxToPt() ?? size?.Height ?? 0;
+            var marginLeft = Margin?.Left.PxToPt() ?? 0;
+            var marginTop = Margin?.Top.PxToPt() ?? 0;
+
+            if (Position?.Equals(PositonAbsolte, StringComparison.OrdinalIgnoreCase) is true
+                || Position?.Equals(PositonRelative, StringComparison.OrdinalIgnoreCase) is true)
+            {
+                var left = Left.GetValueOrDefault() + marginLeft;
+                var top = Top.GetValueOrDefault() + marginTop;
+
+                return new RectangleF(left, top, width, height);
+            }
+            else
+            {
+                return new RectangleF(marginLeft, marginTop, width, height);
+            }
         }
     }
 }

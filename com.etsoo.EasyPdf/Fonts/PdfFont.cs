@@ -87,21 +87,6 @@ namespace com.etsoo.EasyPdf.Fonts
             RefName = refName;
         }
 
-        public override bool Equals(object? obj)
-        {
-            if (obj is PdfFont f && f.RefName == RefName && f.Size == Size)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(RefName, Size);
-        }
-
         /// <summary>
         /// Write the font
         /// 输出字体

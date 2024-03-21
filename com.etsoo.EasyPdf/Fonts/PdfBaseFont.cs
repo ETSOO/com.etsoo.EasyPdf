@@ -429,7 +429,7 @@ namespace com.etsoo.EasyPdf.Fonts
         /// <returns>Glyph id</returns>
         public int GetGlyphId(int cid)
         {
-            var items = CMaps.OrderByDescending(g => g.Format);
+            var items = CMaps.OrderBy(g => g.Platform).OrderByDescending(g => g.Format);
 
             foreach (var g in items)
             {
@@ -579,7 +579,7 @@ namespace com.etsoo.EasyPdf.Fonts
             var stream = PdfConstants.StreamManager.GetStream(Encoding.ASCII.GetBytes(buf.ToString()));
             var bytes = await stream.ToBytesAsync();
 
-            return new PdfStreamDic(bytes, null);
+            return new PdfStreamDic(bytes);
         }
 
         private byte[] GetBytes(short n)

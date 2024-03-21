@@ -1,14 +1,16 @@
-﻿using com.etsoo.EasyPdf.Types;
-
-namespace com.etsoo.EasyPdf.Objects
+﻿namespace com.etsoo.EasyPdf.Objects
 {
+    /// <summary>
+    /// PDF font stream
+    /// PDF 字体流
+    /// </summary>
     public class PdfFontStream : PdfStreamDic
     {
         public string? Subtype { get; init; }
 
         public int[]? Lengths { get; init; }
 
-        public PdfFontStream(ReadOnlyMemory<byte> bytes, PdfDictionary? dic = null) : base(bytes, dic)
+        public PdfFontStream(ReadOnlyMemory<byte> bytes) : base(bytes)
         {
         }
 

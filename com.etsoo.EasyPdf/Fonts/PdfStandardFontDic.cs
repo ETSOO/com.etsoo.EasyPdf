@@ -21,6 +21,7 @@ namespace com.etsoo.EasyPdf.Fonts
         public PdfStandardFontEncoding Encoding { get; }
 
         public PdfStandardFontDic(string baseFont, PdfStandardFontEncoding encoding = PdfStandardFontEncoding.WinAnsiEncoding)
+            : base()
         {
             BaseFont = baseFont;
             Encoding = encoding;

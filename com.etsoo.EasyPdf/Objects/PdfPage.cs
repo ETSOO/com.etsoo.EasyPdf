@@ -1,6 +1,8 @@
 ﻿using com.etsoo.EasyPdf.Content;
 using com.etsoo.EasyPdf.Dto;
+using com.etsoo.EasyPdf.Fonts;
 using com.etsoo.EasyPdf.Types;
+using System.Drawing;
 using System.Numerics;
 
 namespace com.etsoo.EasyPdf.Objects
@@ -77,14 +79,13 @@ namespace com.etsoo.EasyPdf.Objects
         /// </summary>
         public PdfStyle Style { get; }
 
+        private RectangleF contentRect;
+
         /// <summary>
         /// Last identifier point
         /// 最后标识点
         /// </summary>
         private Vector2 lastPoint = new();
-
-        private int marginLeft;
-        private int marginTop;
 
         /// <summary>
         /// Constructor
@@ -104,28 +105,6 @@ namespace com.etsoo.EasyPdf.Objects
             Style = style;
         }
 
-        /*
-        public PdfPage(PdfObject obj, PdfDictionary dic) : base(obj, dic)
-        {
-            Parent = dic.GetRequired<PdfObject>("Parent");
-
-            LastModified = dic.GetValue<DateTime?>("LastModified");
-
-            var mediaBoxArray = dic.Get<PdfArray>("MediaBox");
-            PageSize = mediaBoxArray.ToRectangle();
-
-            Contents = dic.Get<PdfObject>("Contents");
-
-            // Match the stream with contents
-            Stream = default!;
-
-            Rotate = dic.GetValue<int?>("Rotate");
-
-            // Resources
-            var resources = dic.GetRequired<PdfDictionary>("Resources");
-        }
-        */
-
         protected override void AddItems()
         {
             base.AddItems();
@@ -139,62 +118,250 @@ namespace com.etsoo.EasyPdf.Objects
             }
 
             Dic.AddNameInt(nameof(Data.Rotate), Data.Rotate);
+            // Dic.AddNameNum("UserUnit", 1.0);
             Dic.AddNameItem(nameof(Contents), Contents);
             Dic.AddNameItem(nameof(Resources), Resources);
             Dic.AddNameDate(nameof(LastModified), LastModified);
+        }
+
+        /// <summary>
+        /// Begin text output
+        /// 开始文本输出
+        /// </summary>
+        /// <returns>Task</returns>
+        public async Task BeginTextAsync()
+        {
+            await Stream.WriteAsync(PdfOperator.BT);
         }
 
         public Vector2 CalculatePoint(Vector2 point)
         {
             return point with
             {
-                X = point.X + marginLeft,
-                Y = marginTop - point.Y
+                X = point.X.PxToPt() + contentRect.X,
+                Y = contentRect.Height + contentRect.Y - point.Y.PxToPt()
             };
         }
 
-        public async Task PrepareAsync()
+        /// <summary>
+        /// End text output
+        /// 结束文本输出
+        /// </summary>
+        /// <returns>Task</returns>
+        public async Task EndTextAsync()
         {
-            // Page data should be frozon now
-            marginLeft = Style.Margin?.Left ?? 0;
-            marginTop = Data.PageSize.Height - Style.Margin?.Top ?? 0;
-
-            await Stream.WriteAsync(PdfOperator.Zm(CalculatePoint(lastPoint)));
+            await Stream.WriteAsync(PdfOperator.ET);
         }
 
-        private bool gStateSaved;
-
-        // Restore graphics state
-        private void RestoreGState()
+        private RectangleF GetPageRectangle(RectangleF docRect, PdfStyle style)
         {
-            if (gStateSaved)
+            var adjustLeft = ((style.Padding?.Left ?? 0) + (style.Border?.Left?.Width ?? 0)).PxToPt();
+            var adjustTop = ((style.Padding?.Top ?? 0) + (style.Border?.Top?.Width ?? 0)).PxToPt();
+            var adjustRight = ((style.Padding?.Right ?? 0) + (style.Border?.Right?.Width ?? 0)).PxToPt();
+            var adjustBottom = ((style.Padding?.Bottom ?? 0) + (style.Border?.Bottom?.Width ?? 0)).PxToPt();
+
+            var x = docRect.X + adjustLeft;
+            var y = docRect.Y + adjustBottom; // PDF coordinate is bottom to top
+            var width = docRect.Width - adjustLeft - adjustRight;
+            var height = docRect.Height - adjustTop - adjustBottom;
+
+            return new RectangleF(x, y, width, height);
+        }
+
+        /// <summary>
+        /// Move to the point
+        /// 移动到点
+        /// </summary>
+        /// <param name="point">The point</param>
+        /// <returns>Task</returns>
+        public async Task MoveToAsync(Vector2 point)
+        {
+            lastPoint = CalculatePoint(point);
+            await Stream.WriteAsync(PdfOperator.Zm(lastPoint));
+        }
+
+        /// <summary>
+        /// Move text output to the point
+        /// 移动文本输出到点
+        /// </summary>
+        /// <param name="point">Start point</param>
+        /// <param name="font">Font</param>
+        /// <returns>Task</returns>
+        public async Task MoveToAsync(Vector2 point, IPdfFont font)
+        {
+            lastPoint = CalculatePoint(point);
+
+            // Deduct line height
+            lastPoint.Y -= font.Size - 1;
+
+            await Stream.WriteAsync(PdfOperator.Td(lastPoint));
+        }
+
+        public async Task PrepareAsync(IPdfWriter writer)
+        {
+            // Page style
+            var style = Style.GetComputedStyle();
+
+            // Document
+            var doc = writer.Document;
+
+            // Document rectangle, based on page size
+            var docRect = doc.Style.GetRectangle(Data.PageSize);
+
+            // Document border & background
+            await WriteBorderAndBackgroundAsync(doc.Style, docRect);
+
+            // Page Border & background
+            var pageRect = GetPageRectangle(docRect, doc.Style);
+            await WriteBorderAndBackgroundAsync(style, pageRect);
+
+            // Page available content size
+            contentRect = GetPageRectangle(pageRect, style);
+
+            // Begin text output
+            await BeginTextAsync();
+
+            // Page level font
+            var font = await writer.WriteFontAsync(Stream, style);
+
+            // Move to the start point
+            await MoveToAsync(lastPoint, font);
+        }
+
+        /// <summary>
+        /// Restore graphics state
+        /// 恢复图形状态
+        /// </summary>
+        /// <returns>Task</returns>
+        public async Task RestoreStateAsync()
+        {
+            await Stream.WriteAsync(PdfOperator.Q);
+        }
+
+        /// <summary>
+        /// Save graphics state
+        /// 保持图形状态
+        /// </summary>
+        /// <returns></returns>
+        public async Task SaveStateAsync()
+        {
+            await Stream.WriteAsync(PdfOperator.q);
+        }
+
+        /// <summary>
+        /// Set font color
+        /// 设置字体颜色
+        /// </summary>
+        /// <param name="color">Color</param>
+        /// <returns>Task</returns>
+        public async Task SetFontColor(PdfColor? color)
+        {
+            if (color.HasValue)
             {
-                Stream.Write(PdfOperator.Q);
-
-                gStateSaved = false;
+                await Stream.WriteAsync(PdfOperator.RG2(color.Value));
             }
-        }
-
-        // Save graphics state
-        private void SaveGState()
-        {
-            Stream.Write(PdfOperator.q);
-            gStateSaved = true;
-        }
-
-        public async Task WriteEndAsync()
-        {
-            // await Stream.WriteAsync(PdfOperator.ET);
-
-            // Back to begin
-            Stream.Position = 0;
         }
 
         public async Task<bool> WriteAsync(PdfBlock block, IPdfWriter writer)
         {
-            await block.WriteAsync(this, writer);
+            block.Style.Parent = Style;
+            return await block.WriteAsync(this, writer);
+        }
 
-            return false;
+        /// <summary>
+        /// Write border and background
+        /// 输出边框和背景
+        /// </summary>
+        /// <param name="style">Current style</param>
+        /// <param name="rect">Rectangle</param>
+        /// <returns>Task</returns>
+        public async ValueTask WriteBorderAndBackgroundAsync(PdfStyle style, RectangleF rect)
+        {
+            // Background color
+            var bgcolor = style.BackgroundColor;
+            if (bgcolor.HasValue)
+            {
+                // Save graphics state
+                await SaveStateAsync();
+
+                await Stream.WriteAsync(PdfOperator.RG2(bgcolor.Value));
+                await Stream.WriteAsync(PdfOperator.Zw(0));
+                await Stream.WriteAsync(PdfOperator.Zre(rect));
+                await Stream.WriteAsync(PdfOperator.B);
+
+                // Restore graphics state
+                await RestoreStateAsync();
+            }
+
+            var border = style.Border;
+            if (border?.HasBorder is true)
+            {
+                // Save graphics state
+                await SaveStateAsync();
+
+                if (border.SameStyle)
+                {
+                    // Reduce operators for simple style
+                    var width = border.Left.Width.PxToPt();
+                    var widthHalf = width / 2.0F;
+                    rect.Inflate(-widthHalf, -widthHalf);
+
+                    await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(width));
+                    await Stream.WriteAsync(PdfOperator.Zre(rect));
+                    await Stream.WriteAsync(PdfOperator.S);
+                }
+                else
+                {
+                    var leftWidth = border.Left.Width.PxToPt();
+                    var leftWidthHalf = leftWidth / 2.0F;
+
+                    var topWidth = border.Top.Width.PxToPt();
+                    var topWidthHalf = topWidth / 2.0F;
+
+                    var rightWidth = border.Right.Width.PxToPt();
+                    var rightWidthHalf = rightWidth / 2.0F;
+
+                    var bottomWidth = border.Bottom.Width.PxToPt();
+                    var bottomWidthHalf = bottomWidth / 2.0F;
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X + leftWidthHalf, rect.Y)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(leftWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X + leftWidthHalf, rect.Y + rect.Height)));
+                    await Stream.WriteAsync(PdfOperator.S);
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X, rect.Y + rect.Height - topWidthHalf)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Top.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(topWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X + rect.Width, rect.Y + rect.Height - topWidthHalf)));
+                    await Stream.WriteAsync(PdfOperator.S);
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X + rect.Width - rightWidthHalf, rect.Y + rect.Height)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Right.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(rightWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X + rect.Width - rightWidthHalf, rect.Y)));
+                    await Stream.WriteAsync(PdfOperator.S);
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X + rect.Width, rect.Y + bottomWidthHalf)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Bottom.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(bottomWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X, rect.Y + bottomWidthHalf)));
+                    await Stream.WriteAsync(PdfOperator.S);
+                }
+
+                // Restore graphics state
+                await RestoreStateAsync();
+            }
+        }
+
+        public async Task WriteEndAsync()
+        {
+            // End text output
+            await EndTextAsync();
+
+            // Back to begin
+            Stream.Position = 0;
         }
     }
 }

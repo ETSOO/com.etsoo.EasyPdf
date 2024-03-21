@@ -87,12 +87,33 @@
         /// </summary>
         public byte B { get; }
 
+        /// <summary>
+        /// Alpha component value
+        /// </summary>
+        public float? A { get; }
+
+        private static byte ParseColor(string part, byte multiplier = 255)
+        {
+            if (part.EndsWith('%'))
+            {
+                return (byte)(multiplier * float.Parse(part[..^1]) / 100);
+            }
+            else if (byte.TryParse(part, out var result))
+            {
+                return result;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
         public static PdfColor? Parse(string colorText)
         {
             colorText = colorText.Trim().ToLower();
 
             bool shortCase;
-            if (colorText.StartsWith("#") && ((shortCase = colorText.Length == 4) || colorText.Length == 7))
+            if (colorText.StartsWith('#') && ((shortCase = colorText.Length == 4) || colorText.Length == 7))
             {
                 colorText = colorText[1..];
                 if (shortCase) colorText += colorText;
@@ -100,6 +121,28 @@
                 var g = Convert.ToByte(colorText[2..4], 16);
                 var b = Convert.ToByte(colorText[4..6], 16);
                 return new PdfColor(r, g, b);
+            }
+
+            if (colorText.StartsWith("rgb("))
+            {
+                var parts = colorText[4..^1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if ((shortCase = parts.Length == 3) || parts.Length == 5)
+                {
+                    var r = ParseColor(parts[0]);
+                    var g = ParseColor(parts[1]);
+                    var b = ParseColor(parts[2]);
+                    if (shortCase)
+                    {
+                        return new PdfColor(r, g, b);
+                    }
+                    else
+                    {
+                        var a = ParseColor(parts[4], 1);
+                        return new PdfColor(r, g, b, a);
+                    }
+                }
+
+                return null;
             }
 
             return colorText switch
@@ -119,21 +162,31 @@
             };
         }
 
-        public PdfColor(byte r, byte g, byte b)
+        /// <summary>
+        /// Constructor
+        /// 构造函数
+        /// </summary>
+        /// <param name="r">Red</param>
+        /// <param name="g">Green</param>
+        /// <param name="b">Blue</param>
+        /// <param name="a">Alpha</param>
+        public PdfColor(byte r, byte g, byte b, float? a = null)
         {
             R = r;
             G = g;
             B = b;
+            A = a;
         }
 
         /// <summary>
         /// To PDF color string
+        /// 转化为 PDF 颜色字符串
         /// like "226, 24, 33" => ".8863 .0941 .1294"
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Result</returns>
         public override string ToString()
         {
-            return $"{R / 255.0f} {G / 255.0f} {B / 255.0f}";
+            return $"{R / 255.0f} {G / 255.0f} {B / 255.0f}{(A.HasValue ? $" {A}" : "")}";
         }
     }
 }

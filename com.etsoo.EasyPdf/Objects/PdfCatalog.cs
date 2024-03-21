@@ -6,7 +6,7 @@ namespace com.etsoo.EasyPdf.Objects
     /// PDF catalog
     /// PDF 目录
     /// </summary>
-    public class PdfCatalog : PdfObjectDic
+    internal class PdfCatalog : PdfObjectDic
     {
         public override string Type => "Catalog";
 
@@ -16,16 +16,11 @@ namespace com.etsoo.EasyPdf.Objects
 
         public PdfObject Pages { get; set; }
 
+        public PdfLinkBaseDic? URI { get; set; }
+
         public PdfCatalog(PdfObject pages) : base()
         {
             Pages = pages;
-        }
-
-        public PdfCatalog(PdfObject obj, PdfDictionary dic) : base(obj, dic)
-        {
-            Lang = dic.GetValue<string>(nameof(Lang));
-            Version = dic.GetValue<string>(nameof(Version));
-            Pages = dic.GetRequired<PdfObject>(nameof(Pages));
         }
 
         protected override void AddItems()
@@ -35,6 +30,7 @@ namespace com.etsoo.EasyPdf.Objects
             Dic.AddNameStr(nameof(Lang), Lang);
             Dic.AddNameStr(nameof(Version), Version);
             Dic.AddNameItem(nameof(Pages), Pages);
+            Dic.AddNameItem(nameof(URI), URI);
         }
     }
 }

@@ -8,25 +8,37 @@ using com.etsoo.EasyPdf.Types;
 namespace com.etsoo.EasyPdf
 {
     /// <summary>
-    /// PDF document creation
-    /// PDF 文档创建
+    /// PDF document creation, based on PDF 1.7
+    /// PDF 文档创建，基于 PDF 1.7
     /// A basic conforming PDF files shall be constructed of following four elements
     /// 1. A one-line header identifying that make up the document contained in the file.
     /// 2. A body containing the objects that make up the document contained in the file.
     /// 3. A cross-reference table containing information about the indirect objects in the file.
     /// 4. A trailer giving the location of the cross-reference table and of certain special objects within the body of the file.
     /// </summary>
-    public class PdfDocument : IPdfDocument
+    public class PdfDocument : IPdfDocument, IDisposable, IAsyncDisposable
     {
+        /// <summary>
+        /// Debug mode
+        /// 调试模式
+        /// </summary>
+        public static bool Debug { get; set; }
+
         private readonly Stream stream;
         private readonly bool keepOpen;
         private PdfWriter? writer;
 
         /// <summary>
-        /// Version, 1.4+ required
-        /// 版本，仅支持1.4及以上版本
+        /// Version
+        /// 版本
         /// </summary>
-        public decimal Version { get; set; } = PdfVersion.V17;
+        public decimal Version { get; private set; } = PdfVersion.V17;
+
+        /// <summary>
+        /// Base URI
+        /// 基础 URI
+        /// </summary>
+        public string? BaseUri { get; set; }
 
         /// <summary>
         /// Page data
@@ -44,8 +56,9 @@ namespace com.etsoo.EasyPdf
         public PdfStyle Style { get; } = new()
         {
             Font = PdfStandardFont.Helvetica,
-            FontSize = 12,
-            Margin = new PdfStyleSpace(48)
+            // 16px = 12pt
+            FontSize = 16,
+            Padding = new PdfStyleSpace(60)
         };
 
         /// <summary>
@@ -59,6 +72,18 @@ namespace com.etsoo.EasyPdf
         /// 字体集合
         /// </summary>
         public PdfFontCollection Fonts { get; } = new();
+
+        /// <summary>
+        /// Header
+        /// 页眉
+        /// </summary>
+        public PdfHeaderFooter Header { get; } = new PdfHeaderFooter(true);
+
+        /// <summary>
+        /// Footer
+        /// 页脚
+        /// </summary>
+        public PdfHeaderFooter Footer { get; } = new PdfHeaderFooter(false);
 
         /// <summary>
         /// Constructor
@@ -99,22 +124,36 @@ namespace com.etsoo.EasyPdf
             return writer;
         }
 
-        /// <summary>
-        /// Async close
-        /// 异步关闭
-        /// </summary>
-        /// <returns>Task</returns>
-        public async Task CloseAsync()
+        public void Dispose()
+        {
+            if (writer != null)
+            {
+                writer.DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                writer = null;
+            }
+
+            if (!keepOpen)
+            {
+                stream.Dispose();
+            }
+
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
         {
             if (writer != null)
             {
                 await writer.DisposeAsync();
+                writer = null;
             }
 
             if (!keepOpen)
             {
                 await stream.DisposeAsync();
             }
+
+            GC.SuppressFinalize(this);
         }
     }
 }

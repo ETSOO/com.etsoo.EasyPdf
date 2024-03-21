@@ -29,7 +29,7 @@ namespace com.etsoo.EasyPdf.Fonts
         /// </summary>
         public PdfObject? ToUnicode { get; set; }
 
-        public PdfFontDic(string baseFont, string encoding)
+        public PdfFontDic(string baseFont, string encoding) : base()
         {
             BaseFont=baseFont;
             Encoding=encoding;

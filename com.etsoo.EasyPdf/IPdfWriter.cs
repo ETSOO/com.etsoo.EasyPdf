@@ -22,7 +22,7 @@ namespace com.etsoo.EasyPdf
         /// 创建字体
         /// </summary>
         /// <param name="familyName">Family name</param>
-        /// <param name="size">Size</param>
+        /// <param name="size">Size in pt (not px)</param>
         /// <param name="style">Style</param>
         /// <returns>Font</returns>
         IPdfFont CreateFont(string familyName, float size, PdfFontStyle style = PdfFontStyle.Regular);
@@ -42,5 +42,14 @@ namespace com.etsoo.EasyPdf
         /// <param name="dic">Dictionary data object</param>
         /// <returns>Task</returns>
         Task<PdfObject> WriteDicAsync(PdfObjectDic dic);
+
+        /// <summary>
+        /// Write font
+        /// 输出字体
+        /// </summary>
+        /// <param name="stream">Stream to write</param>
+        /// <param name="style">Current style</param>
+        /// <returns>Current font</returns>
+        ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style);
     }
 }

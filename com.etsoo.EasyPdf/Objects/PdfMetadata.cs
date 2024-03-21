@@ -35,18 +35,6 @@ namespace com.etsoo.EasyPdf.Objects
             CreationDate = DateTime.Now;
         }
 
-        private PdfMetadata(PdfObject obj, PdfDictionary dic) : base(obj, dic)
-        {
-            Title = dic.GetValue<string>(nameof(Title));
-            Author = dic.GetValue<string>(nameof(Author));
-            Subject = dic.GetValue<string>(nameof(Subject));
-            Keywords = dic.GetValue<string>(nameof(Keywords));
-            Creator = dic.GetValue<string>(nameof(Creator));
-            Producer = dic.GetValue<string>(nameof(Producer)) ?? "Unknown";
-            CreationDate = dic.GetValue<DateTime?>(nameof(CreationDate)) ?? DateTime.Now;
-            ModDate = dic.GetValue<DateTime?>(nameof(ModDate));
-        }
-
         protected override void AddItems()
         {
             base.AddItems();

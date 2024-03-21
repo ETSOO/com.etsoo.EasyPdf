@@ -8,6 +8,12 @@ namespace com.etsoo.EasyPdf.Types
     /// </summary>
     public record PdfDictionary : PdfDictionaryBase<IPdfType, IPdfType>
     {
+        /// <summary>
+        /// Parse bytes to dictionary, for testing and understanding only
+        /// 解析字节为字典，仅用于测试和理解
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
         public static PdfDictionary Parse(ReadOnlySpan<byte> bytes)
         {
             // <<
@@ -47,6 +53,12 @@ namespace com.etsoo.EasyPdf.Types
         public void AddNameDate(string name, DateTime? date)
         {
             if (date.HasValue) AddNameItem(name, new PdfDateTime(date.Value));
+        }
+
+        public void AddNameBool(string name, bool? value)
+        {
+            if (!value.HasValue) return;
+            AddNameItem(name, new PdfBoolean(value.Value));
         }
 
         public void AddNameInt(string name, int? value)

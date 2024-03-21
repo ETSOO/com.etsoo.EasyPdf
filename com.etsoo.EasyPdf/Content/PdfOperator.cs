@@ -57,6 +57,11 @@ namespace com.etsoo.EasyPdf.Content
         public readonly static byte[] ET = [69, 84, PdfConstants.LineFeedByte];
 
         /// <summary>
+        /// Close subpath
+        /// </summary>
+        public readonly static byte[] h = [104, PdfConstants.LineFeedByte];
+
+        /// <summary>
         /// Show a text string
         /// " Tj\n"
         /// </summary>
@@ -67,6 +72,12 @@ namespace com.etsoo.EasyPdf.Content
         /// "T*\n"
         /// </summary>
         public readonly static byte[] T42 = [84, 42, PdfConstants.LineFeedByte];
+
+        /// <summary>
+        /// Close and strokes the path
+        /// "s\n"
+        /// </summary>
+        public readonly static byte[] s = [115, PdfConstants.LineFeedByte];
 
         /// <summary>
         /// Strokes the path defined by the preceding drawing commands
@@ -103,8 +114,6 @@ namespace com.etsoo.EasyPdf.Content
         public static async Task SetupStyle(Stream stream, PdfFontStyle style, float size)
         {
             var mode = TrMode.Fill;
-            if (style.HasFlag(PdfFontStyle.Italic))
-                await stream.WriteAsync(Tm(1, 0, 0.21256f, 1, 0, 0, true));
 
             if (style.HasFlag(PdfFontStyle.Bold))
             {
@@ -113,6 +122,14 @@ namespace com.etsoo.EasyPdf.Content
             }
 
             await stream.WriteAsync(Tr(mode));
+
+            if (style.HasFlag(PdfFontStyle.Italic))
+            {
+                // a, b [1, 0]
+                // c, d [0.21256, 1]
+                // e, f [0, 0]
+                await stream.WriteAsync(Tm(1, 0, 0.21256f, 1, 0, 0, true));
+            }
         }
 
         /// <summary>
@@ -120,11 +137,11 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="color">Color</param>
         /// <returns>Bytes</returns>
-        public static byte[] RG(PdfColor color)
+        public static byte[] RG(PdfColor? color)
         {
             return
             [
-                .. Encoding.ASCII.GetBytes($"{color}"),
+                .. Encoding.ASCII.GetBytes(color.HasValue ? $"{color}" : "0 0 0"),
                 .. " RG\n"u8
             ];
         }
@@ -134,10 +151,9 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="color">Color</param>
         /// <returns>Bytes</returns>
-        public static byte[] RG2(PdfColor color)
+        public static byte[] RG2(PdfColor? color)
         {
             var bytes = RG(color);
-            bytes[^1] = PdfConstants.SpaceByte;
             return [.. bytes, .. Zrg(color)];
         }
 
@@ -146,11 +162,11 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="color">Color</param>
         /// <returns>Bytes</returns>
-        public static byte[] Zrg(PdfColor color)
+        public static byte[] Zrg(PdfColor? color)
         {
             return
             [
-                .. Encoding.ASCII.GetBytes($"{color}"),
+                .. Encoding.ASCII.GetBytes(color.HasValue ? $"{color}" : "0 0 0"),
                 .. " rg\n"u8
             ];
         }
@@ -222,8 +238,8 @@ namespace com.etsoo.EasyPdf.Content
                 .. new byte[]
                 {
                     PdfConstants.SpaceByte,
-                    (byte)(cm ? 99 : 84),
-                    109,
+                    (byte)(cm ? 99 : 84), // c or T
+                    109, // m
                     PdfConstants.LineFeedByte
                 }
             ];
@@ -333,8 +349,17 @@ namespace com.etsoo.EasyPdf.Content
             ];
         }
 
+        public static byte[] Zre(RectangleF rect)
+        {
+            return
+            [
+                .. Encoding.ASCII.GetBytes($"{rect.X} {rect.Y} {rect.Width} {rect.Height}"),
+                .. " re\n"u8
+            ];
+        }
+
         /// <summary>
-        /// Set line width
+        /// Set line width in pixels
         /// </summary>
         /// <param name="width">Width</param>
         /// <returns>Bytes</returns>

@@ -32,8 +32,7 @@
         public T GetRequired<T>(string key) where T : class, IPdfType
         {
             var v = Get<T>(key);
-            if (v == null) throw new ArgumentException(key);
-            return v;
+            return v ?? throw new ArgumentException(key);
         }
 
         /// <summary>
@@ -61,15 +60,26 @@
         public T GetRequiredValue<T>(string key)
         {
             var v = GetValue<T>(key);
-            if (v == null) throw new ArgumentException(key);
-            return v;
+            return v ?? throw new ArgumentException(key);
         }
 
+        /// <summary>
+        /// Is equal to key
+        /// 是否键相等
+        /// </summary>
+        /// <param name="item">Key value</param>
+        /// <returns>Result</returns>
         public bool KeyEquals(string item)
         {
             return false;
         }
 
+        /// <summary>
+        /// Write to stream
+        /// 写入流
+        /// </summary>
+        /// <param name="stream">Stream to write</param>
+        /// <returns>Task</returns>
         public virtual async Task WriteToAsync(Stream stream)
         {
             stream.Write(PdfConstants.DictionaryStartBytes);

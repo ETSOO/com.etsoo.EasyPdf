@@ -1,10 +1,12 @@
 ﻿using com.etsoo.EasyPdf.Dto;
-using com.etsoo.EasyPdf.Support;
 using com.etsoo.EasyPdf.Types;
-using System.Drawing;
 
 namespace com.etsoo.EasyPdf.Objects
 {
+    /// <summary>
+    /// PDF page tree object
+    /// PDF 页面树对象
+    /// </summary>
     internal class PdfPageTree : PdfObjectDic
     {
         /// <summary>
@@ -58,18 +60,6 @@ namespace com.etsoo.EasyPdf.Objects
             Obj = obj;
             PageData = pageData;
             Kids = [];
-        }
-
-        public PdfPageTree(PdfObject obj, PdfDictionary dic) : base(obj, dic)
-        {
-            Parent = dic.Get<PdfObject>(nameof(Parent));
-
-            var kids = dic.GetRequired<PdfArray>(nameof(Kids)).Value.Select(k => (k as PdfObject)!);
-            Kids = new List<PdfObject>(kids);
-
-            var mediaBoxArray = dic.Get<PdfArray>(MediaBoxField);
-            var MediaBox = mediaBoxArray.ToRectangle();
-            PageData = new PdfPageData { MediaBox = MediaBox ?? new Rectangle(Point.Empty, PdfPageSize.A4) };
         }
 
         protected override void AddItems()

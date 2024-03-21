@@ -24,9 +24,9 @@ namespace com.etsoo.EasyPdf.Fonts
         /// </summary>
         public const string FontCourier = PdfStandardFont.Courier;
 
-        private readonly List<PdfBaseFont> BaseFonts = new();
+        private readonly List<PdfBaseFont> BaseFonts = [];
 
-        private readonly Dictionary<string, List<IPdfFont>> Fonts = new();
+        private readonly Dictionary<string, List<IPdfFont>> Fonts = [];
 
         /// <summary>
         /// Load font
@@ -120,7 +120,7 @@ namespace com.etsoo.EasyPdf.Fonts
                 else
                 {
                     var standardFont = new PdfStandardFont(standardName, size, style, "F" + Fonts.Count);
-                    Fonts.Add(standardName, new() { standardFont });
+                    Fonts.Add(standardName, [standardFont]);
                     return standardFont;
                 }
             }
@@ -181,7 +181,7 @@ namespace com.etsoo.EasyPdf.Fonts
             }
 
             var font = new PdfFont(styleFont, isMatch, size, style, "F" + Fonts.Count);
-            Fonts.Add(key, new() { font });
+            Fonts.Add(key, [font]);
 
             return font;
         }

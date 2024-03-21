@@ -1,4 +1,5 @@
-﻿using com.etsoo.EasyPdf.Objects;
+﻿using com.etsoo.EasyPdf.Fonts;
+using com.etsoo.EasyPdf.Objects;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -40,7 +41,30 @@ namespace com.etsoo.EasyPdf.Content
 
         public async Task WriteAsync(IPdfPage page, IPdfWriter writer)
         {
+            // Computed style
+            var style = Style.GetComputedStyle();
 
+            // Save graphics state
+            await page.SaveStateAsync();
+
+            // Write font
+            var font = await writer.WriteFontAsync(page.Stream, style);
+            await font.SetStyleAsync(page.Stream);
+
+            // Write color
+            await page.SetFontColor(style.Color);
+
+            // Superscript && Subscript
+            if (style.TextStyle == PdfTextStyle.SuperScript || style.TextStyle == PdfTextStyle.SubScript)
+            {
+
+            }
+
+            // Content
+            await font.WriteAsync(page.Stream, this);
+
+            // Restore graphics state
+            await page.RestoreStateAsync();
         }
     }
 }

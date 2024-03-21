@@ -3,6 +3,11 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace com.etsoo.EasyPdf.Objects
 {
+    /// <summary>
+    /// PDF name trees
+    /// PDF 名称树
+    /// </summary>
+    /// <typeparam name="T">Generic name value type</typeparam>
     public record PdfNameTrees<T> where T : IPdfType
     {
         public PdfObject[]? Kids { get; }

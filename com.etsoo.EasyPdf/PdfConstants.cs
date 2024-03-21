@@ -144,13 +144,15 @@ namespace com.etsoo.EasyPdf
 
         /// <summary>
         /// Dictionary start bytes
+        /// "<<"
         /// </summary>
-        public static readonly byte[] DictionaryStartBytes = new[] { LessThanSignByte, LessThanSignByte };
+        public static readonly byte[] DictionaryStartBytes = [LessThanSignByte, LessThanSignByte];
 
         /// <summary>
         /// Dictionary end bytes
+        /// ">>"
         /// </summary>
-        public static readonly byte[] DictionaryEndBytes = new[] { GreaterThanSignByte, GreaterThanSignByte };
+        public static readonly byte[] DictionaryEndBytes = [GreaterThanSignByte, GreaterThanSignByte];
 
         /// <summary>
         /// White-space characters
@@ -158,19 +160,21 @@ namespace com.etsoo.EasyPdf
         /// In all other contexts, PDF treats any sequence of consecutive white-space characters as one character.
         /// 空白字符
         /// </summary>
-        public static readonly byte[] WhiteSpaceCharacters = new[] { NullByte, HorizontalTabByte, LineFeedByte, FormFeedByte, CarriageReturnByte, SpaceByte };
+        public static readonly byte[] WhiteSpaceCharacters = [NullByte, HorizontalTabByte, LineFeedByte, FormFeedByte, CarriageReturnByte, SpaceByte];
 
         /// <summary>
         /// Delimiter start characters
+        /// "(<[{/%"
         /// 分隔开始字符
         /// </summary>
-        public static readonly byte[] DelimiterStartCharacters = new[] { LeftParenthesisByte, LessThanSignByte, LeftSquareBracketByte, LeftCurlyBracketByte, SolidusByte, PercentSignByte };
+        public static readonly byte[] DelimiterStartCharacters = [LeftParenthesisByte, LessThanSignByte, LeftSquareBracketByte, LeftCurlyBracketByte, SolidusByte, PercentSignByte];
 
         /// <summary>
         /// Delimiter characters
+        /// ")>]}"
         /// 分隔字符
         /// </summary>
-        public static readonly byte[] DelimiterCharacters = DelimiterStartCharacters.Concat(new[] { RightParenthesisByte, GreaterThanSignByte, RightSquareBracketByte, RightCurlyBracketByte }).ToArray();
+        public static readonly byte[] DelimiterCharacters = [.. DelimiterStartCharacters, RightParenthesisByte, GreaterThanSignByte, RightSquareBracketByte, RightCurlyBracketByte];
 
         /// <summary>
         /// Delimiter start characters with space
@@ -182,7 +186,7 @@ namespace com.etsoo.EasyPdf
         /// Delimiter start characters with all space characters
         /// 分隔开始字符+所有空格字符
         /// </summary>
-        public static readonly byte[] DelimiterStartCharactersWithAllSpaces = DelimiterStartCharacters.Concat(WhiteSpaceCharacters).ToArray();
+        public static readonly byte[] DelimiterStartCharactersWithAllSpaces = [.. DelimiterStartCharacters, .. WhiteSpaceCharacters];
 
         /// <summary>
         /// startxref bytes

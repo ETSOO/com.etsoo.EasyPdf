@@ -34,6 +34,7 @@ namespace com.etsoo.EasyPdf.Content
         public void Add(PdfChunk chunk)
         {
             Chunks.Add(chunk);
+            chunk.Style.Parent = Style;
         }
 
         /// <summary>
@@ -52,7 +53,7 @@ namespace com.etsoo.EasyPdf.Content
             return chunk;
         }
 
-        public virtual async Task WriteAsync(IPdfPage page, IPdfWriter writer)
+        public virtual async Task<bool> WriteAsync(IPdfPage page, IPdfWriter writer)
         {
             if (Rendered)
                 throw new InvalidOperationException("The block has been rendered.");
@@ -63,10 +64,12 @@ namespace com.etsoo.EasyPdf.Content
                 await chunk.WriteAsync(page, writer);
             }
 
-            // Move to start of next text line
+            // It's a block element, move to start of next text line
             await page.Stream.WriteAsync(PdfOperator.T42);
 
             Rendered = true;
+
+            return false;
         }
     }
 }

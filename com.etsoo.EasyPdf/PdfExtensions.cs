@@ -362,5 +362,28 @@ namespace com.etsoo.EasyPdf
 
             return writer.WrittenMemory;
         }
+
+        /// <summary>
+        /// Pixels to points
+        /// 像素到英寸
+        /// </summary>
+        /// <param name="px">Pixel</param>
+        /// <returns>Inches</returns>
+        public static float PxToPt(this float px)
+        {
+            // 1px = 0.75pt
+            return px * 0.75F;
+        }
+
+        /// <summary>
+        /// Pixels to points
+        /// 像素到英寸
+        /// </summary>
+        /// <param name="px">Pixel</param>
+        /// <returns>Inches</returns>
+        public static float PxToPt(this int px)
+        {
+            return PxToPt((float)px);
+        }
     }
 }

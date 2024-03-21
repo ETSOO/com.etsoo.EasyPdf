@@ -4,12 +4,20 @@ using System.Text;
 
 namespace com.etsoo.EasyPdf.Objects
 {
+    /// <summary>
+    /// PDF stream filter
+    /// PDF 流过滤器
+    /// </summary>
     public enum PdfStreamFilter
     {
         None,
         FlateDecode
     }
 
+    /// <summary>
+    /// PDF stream dictionary
+    /// PDF 流字典
+    /// </summary>
     public class PdfStreamDic : PdfObjectDic
     {
         /// <summary>
@@ -32,20 +40,22 @@ namespace com.etsoo.EasyPdf.Objects
         /// Encode/decode filter
         /// 编码/解码过滤器
         /// </summary>
-        public PdfStreamFilter Filter { get; init; } = PdfStreamFilter.None;
+        public PdfStreamFilter? Filter { get; set; }
 
         /// <summary>
         /// Constructor
         /// 构造函数
         /// </summary>
         /// <param name="bytes">Stream bytes</param>
-        /// <param name="dic">Dictionary data</param>
-        public PdfStreamDic(ReadOnlyMemory<byte> bytes, PdfDictionary? dic) : base(null, dic)
+        public PdfStreamDic(ReadOnlyMemory<byte> bytes) : base()
         {
             Bytes = bytes;
 
             // Add the length property
             Dic.AddNameItem("Length", new PdfInt(Bytes.Length));
+
+            // Set the default filter
+            Filter ??= (PdfDocument.Debug ? PdfStreamFilter.None : PdfStreamFilter.FlateDecode);
         }
 
         /// <summary>
@@ -53,8 +63,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// 构造函数
         /// </summary>
         /// <param name="stream">Data stream</param>
-        /// <param name="dic">Dictionary data</param>
-        public PdfStreamDic(Stream stream, PdfDictionary? dic) : this(stream.ToBytes(), dic)
+        public PdfStreamDic(Stream stream) : this(stream.ToBytes())
         {
 
         }
@@ -64,9 +73,8 @@ namespace com.etsoo.EasyPdf.Objects
         /// 构造函数
         /// </summary>
         /// <param name="obj">Object</param>
-        /// <param name="dic">Dictionary data</param>
         /// <param name="bytes">Stream bytes</param>
-        public PdfStreamDic(PdfObject obj, PdfDictionary? dic, ReadOnlyMemory<byte> bytes) : base(obj, dic)
+        public PdfStreamDic(PdfObject obj, ReadOnlyMemory<byte> bytes) : base(obj)
         {
             Bytes = bytes;
         }

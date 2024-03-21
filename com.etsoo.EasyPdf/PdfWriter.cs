@@ -22,6 +22,7 @@ namespace com.etsoo.EasyPdf
         private ushort objIndex = 0;
         private PdfPage? currentPage;
         private PdfObject? metadataObj;
+        private IPdfFont? currentFont;
 
         /// <summary>
         /// Document
@@ -105,14 +106,18 @@ namespace com.etsoo.EasyPdf
                 await WritePageAsync(currentPage);
             }
 
+            // Reset current font, each page has its own declaration
+            currentFont = null;
+
             // Create a new page
-            currentPage = new PdfPage(CreateObj(), pageTree, pageTree.PageData, new PdfStyle(Document.Style));
+            var pageData = pageTree.PageData with { };
+            currentPage = new PdfPage(CreateObj(), pageTree, pageData, new PdfStyle(Document.Style));
 
             // Setup
             setup?.Invoke(currentPage);
 
             // Prepare for rendering
-            await currentPage.PrepareAsync();
+            await currentPage.PrepareAsync(this);
         }
 
         /// <summary>
@@ -135,7 +140,7 @@ namespace com.etsoo.EasyPdf
         /// 创建字体
         /// </summary>
         /// <param name="familyName">Family name</param>
-        /// <param name="size">Size</param>
+        /// <param name="size">Size in pt (not px)</param>
         /// <param name="style">Style</param>
         /// <returns>Font</returns>
         public IPdfFont CreateFont(string familyName, float size, PdfFontStyle style = PdfFontStyle.Regular)
@@ -146,12 +151,46 @@ namespace com.etsoo.EasyPdf
             {
                 // First time creation
                 font.ObjRef = CreateObj();
+            }
+
+            return font;
+        }
+
+        /// <summary>
+        /// Write font
+        /// 输出字体
+        /// </summary>
+        /// <param name="stream">Stream to write</param>
+        /// <param name="style">Current style</param>
+        /// <returns>Current font</returns>
+        public async ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style)
+        {
+            var familyName = style.Font;
+            if (string.IsNullOrEmpty(familyName))
+            {
+                return currentFont!;
+            }
+
+            var size = style.FontSize.GetValueOrDefault(16).PxToPt();
+            var fontStyle = style.FontStyle ?? PdfFontStyle.Regular;
+
+            var font = CreateFont(familyName, size, fontStyle);
+
+            // Avoid duplicate font operators
+            if (currentFont?.RefName != font.RefName)
+            {
+                await stream.WriteAsync(PdfOperator.Tf(font.RefName, size));
+                await stream.WriteAsync(PdfOperator.TL(size + font.LineGap));
+
+                currentFont = font;
 
                 // Add to current page
-                if (currentPage != null)
+                if (currentPage != null && font.ObjRef != null)
                     currentPage.Resources.Font[font.RefName] = font.ObjRef.AsRef();
             }
 
+            // Even if the font is the same, the style (bold / italic) may be different
+            // So, return font instead of currentFont
             return font;
         }
 
@@ -163,7 +202,7 @@ namespace com.etsoo.EasyPdf
                 await page.WriteEndAsync();
 
                 // Pdf stream
-                var pageStream = new PdfStreamDic(page.Stream, null);
+                var pageStream = new PdfStreamDic(page.Stream);
                 page.Contents = await WriteDicAsync(pageStream);
 
                 // Dispose
@@ -210,7 +249,11 @@ namespace com.etsoo.EasyPdf
             await WriteDicAsync(pageTree);
 
             // catalog / root
-            var catalog = new PdfCatalog(pageTree.Obj.AsRef()) { Lang = Document.Metadata.Culture?.TwoLetterISOLanguageName };
+            var catalog = new PdfCatalog(pageTree.Obj.AsRef())
+            {
+                Lang = Document.Metadata.Culture?.TwoLetterISOLanguageName,
+                URI = new PdfLinkBaseDic(Document.BaseUri)
+            };
             var catalogObj = await WriteDicAsync(catalog);
 
             // All fonts

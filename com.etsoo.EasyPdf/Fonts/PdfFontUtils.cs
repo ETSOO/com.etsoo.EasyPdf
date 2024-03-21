@@ -1,4 +1,6 @@
-﻿namespace com.etsoo.EasyPdf.Fonts
+﻿using com.etsoo.EasyPdf.Content;
+
+namespace com.etsoo.EasyPdf.Fonts
 {
     internal static class PdfFontUtils
     {
@@ -15,6 +17,17 @@
         public static float GetLineGap(float size)
         {
             return size * 0.1f;
+        }
+
+        public static async ValueTask SetStyleAsync(this IPdfFont font, Stream stream)
+        {
+            if (font.IsMatch || font.Style == PdfFontStyle.Regular)
+            {
+                return;
+            }
+
+            // Artificial draw style
+            await PdfOperator.SetupStyle(stream, font.Style, font.Size);
         }
     }
 }

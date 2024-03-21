@@ -27,11 +27,10 @@ namespace com.etsoo.EasyPdf.Objects
         /// 构造函数
         /// </summary>
         /// <param name="obj">Object</param>
-        /// <param name="dic">Dictionary data</param>
-        public PdfObjectDic(PdfObject? obj = null, PdfDictionary? dic = null)
+        public PdfObjectDic(PdfObject? obj = null)
         {
             Obj = obj;
-            Dic = dic ?? new PdfDictionary([]);
+            Dic = new PdfDictionary();
         }
 
         protected virtual void AddItems()
