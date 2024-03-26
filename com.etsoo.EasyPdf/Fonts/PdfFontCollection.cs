@@ -9,21 +9,6 @@ namespace com.etsoo.EasyPdf.Fonts
     /// </summary>
     public class PdfFontCollection
     {
-        /// <summary>
-        /// Font 'Helvetica'
-        /// </summary>
-        public const string FontHelvetica = PdfStandardFont.Helvetica;
-
-        /// <summary>
-        /// Font 'Times New Roman'
-        /// </summary>
-        public const string FontTimes = PdfStandardFont.Times;
-
-        /// <summary>
-        /// Font 'Courier New'
-        /// </summary>
-        public const string FontCourier = PdfStandardFont.Courier;
-
         private readonly List<PdfBaseFont> BaseFonts = [];
 
         private readonly Dictionary<string, List<IPdfFont>> Fonts = [];
@@ -101,30 +86,6 @@ namespace com.etsoo.EasyPdf.Fonts
         /// <returns>Font</returns>
         public IPdfFont CreateFont(string familyName, float size, PdfFontStyle style = PdfFontStyle.Regular)
         {
-            // Check standard fonts first
-            var standard = PdfStandardFont.Fonts.FirstOrDefault(f => f[0].Equals(familyName) || f[1].Equals(familyName));
-            if (standard != null)
-            {
-                var standardName = style switch
-                {
-                    PdfFontStyle.Bold => standard[2],
-                    PdfFontStyle.Italic => standard[3],
-                    PdfFontStyle.BoldItalic => standard[4],
-                    _ => standard[1]
-                };
-
-                if (Fonts.TryGetValue(standardName, out var standardFonts))
-                {
-                    return standardFonts.First();
-                }
-                else
-                {
-                    var standardFont = new PdfStandardFont(standardName, size, style, "F" + Fonts.Count);
-                    Fonts.Add(standardName, [standardFont]);
-                    return standardFont;
-                }
-            }
-
             // Match base fonts
             var baseFonts = BaseFonts.Where(
                 bf => bf.Names.Any(

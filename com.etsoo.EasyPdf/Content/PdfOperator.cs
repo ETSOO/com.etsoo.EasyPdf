@@ -105,34 +105,6 @@ namespace com.etsoo.EasyPdf.Content
         public readonly static byte[] Q = [81, PdfConstants.LineFeedByte];
 
         /// <summary>
-        /// Setup draw style
-        /// </summary>
-        /// <param name="stream">Stream</param>
-        /// <param name="style">Font style</param>
-        /// <param name="size">Font size</param>
-        /// <returns>Task</returns>
-        public static async Task SetupStyle(Stream stream, PdfFontStyle style, float size)
-        {
-            var mode = TrMode.Fill;
-
-            if (style.HasFlag(PdfFontStyle.Bold))
-            {
-                await stream.WriteAsync(Zw(size / 30));
-                mode = TrMode.FillThenStroke;
-            }
-
-            await stream.WriteAsync(Tr(mode));
-
-            if (style.HasFlag(PdfFontStyle.Italic))
-            {
-                // a, b [1, 0]
-                // c, d [0.21256, 1]
-                // e, f [0, 0]
-                await stream.WriteAsync(Tm(1, 0, 0.21256f, 1, 0, 0, true));
-            }
-        }
-
-        /// <summary>
         /// Set RGB color for stroking operations
         /// </summary>
         /// <param name="color">Color</param>
@@ -168,6 +140,20 @@ namespace com.etsoo.EasyPdf.Content
             [
                 .. Encoding.ASCII.GetBytes(color.HasValue ? $"{color}" : "0 0 0"),
                 .. " rg\n"u8
+            ];
+        }
+
+        /// <summary>
+        /// Letter spacing
+        /// </summary>
+        /// <param name="spacing">Spacing</param>
+        /// <returns>Bytes</returns>
+        public static byte[] Tc(float spacing)
+        {
+            return
+            [
+                .. Encoding.ASCII.GetBytes(spacing.ToString()),
+                .. " Tc\n"u8
             ];
         }
 
@@ -273,6 +259,20 @@ namespace com.etsoo.EasyPdf.Content
             [
                 .. Encoding.ASCII.GetBytes($"{offset}"),
                 .. " Ts\n"u8
+            ];
+        }
+
+        /// <summary>
+        /// Word spacing affects the space between words
+        /// </summary>
+        /// <param name="spacing">Spacing</param>
+        /// <returns>Bytes</returns>
+        public static byte[] Tw(float spacing)
+        {
+            return
+            [
+                .. Encoding.ASCII.GetBytes(spacing.ToString()),
+                .. " Tw\n"u8
             ];
         }
 

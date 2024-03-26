@@ -4,7 +4,7 @@ ETSOO PDF Generation Library / 亿速思维 PDF 生成库
 # Background
 We were very confused about whether to reinvent the wheel (have learned a lot from others for sure), but in the end we had to choose to do so because of the popular components (https://github.com/itext/itextsharp [Deprecated], https://github.com/empira/PDFsharp [Too complex], https://github.com/QuestPDF/QuestPDF [Depends on SkiaSharp]) all have more or less flaws, such as the output file is too large, or the code is difficult to maintain. We chose to start with NET 8 because maturing a set of code requires a process and years of improvement.
 
-- Previous work to mitigate large file size of QuestPDF with Chinese font: https://www.nuget.org/packages/com.etsoo.EasyPdf/1.0.7 but lost fake font styles unstil 2024/03/18.
+- Previous work to mitigate large file size of QuestPDF with Chinese font: https://www.nuget.org/packages/com.etsoo.EasyPdf/1.0.7 but lost fake font styles until 2024/03/18.
 - Previous investigation on generation and parser of PDF: https://github.com/ETSOO/com.etsoo.EasyPdfBuild. The new library only focuses on generation.
 
 # Features (targets)
@@ -50,8 +50,10 @@ pdf.Style.Border = new PdfStyleBorder(PdfColor.Red);
 await pdf.Fonts.LoadAsync("C:\\Windows\\Fonts\\simsun.ttc");
 pdf.Style.Font = "宋体";
 
-//await pdf.Fonts.LoadAsync("C:\\Windows\\Fonts\\msyh.ttc");
-//pdf.PageData.Font = "Microsoft YaHei"; // 微软雅黑
+/*
+await pdf.Fonts.LoadAsync("C:\\Windows\\Fonts\\msyh.ttc");
+pdf.Style.Font = "Microsoft YaHei"; // 微软雅黑
+*/
 
 // Get writer and start writing
 var w = await pdf.GetWriterAsync();

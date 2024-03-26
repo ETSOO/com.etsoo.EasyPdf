@@ -1,7 +1,7 @@
 ﻿using com.etsoo.EasyPdf.Support;
 using System.Drawing;
 
-namespace com.etsoo.EasyPdf.Dto
+namespace com.etsoo.EasyPdf.Objects
 {
     /// <summary>
     /// PDF page data

@@ -1,5 +1,4 @@
 ﻿using com.etsoo.EasyPdf.Content;
-using com.etsoo.EasyPdf.Dto;
 using com.etsoo.EasyPdf.Fonts;
 using com.etsoo.EasyPdf.Objects;
 using com.etsoo.EasyPdf.Support;
@@ -15,6 +14,8 @@ namespace com.etsoo.EasyPdf
     /// 2. A body containing the objects that make up the document contained in the file.
     /// 3. A cross-reference table containing information about the indirect objects in the file.
     /// 4. A trailer giving the location of the cross-reference table and of certain special objects within the body of the file.
+    /// https://stackoverflow.com/questions/10287602/show-pdf-with-all-operators to decode PDF file
+    /// Example files included in the folder "Resources" of the project com.etsoo.EasyPdf.Tests.csproj
     /// </summary>
     public class PdfDocument : IPdfDocument, IDisposable, IAsyncDisposable
     {
@@ -55,7 +56,7 @@ namespace com.etsoo.EasyPdf
         /// </summary>
         public PdfStyle Style { get; } = new()
         {
-            Font = PdfStandardFont.Helvetica,
+            Font = "Arial",
             // 16px = 12pt
             FontSize = 16,
             Padding = new PdfStyleSpace(60)

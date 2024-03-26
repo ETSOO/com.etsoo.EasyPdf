@@ -99,6 +99,19 @@
     }
 
     /// <summary>
+    /// PDF text align
+    /// https://developer.mozilla.org/en-US/docs/Web/CSS/text-align
+    /// PDF 文字对齐
+    /// </summary>
+    public enum PdfTextAlign
+    {
+        Start,
+        Center,
+        End,
+        Justify
+    }
+
+    /// <summary>
     /// PDF text style
     /// PDf 文字样式
     /// </summary>

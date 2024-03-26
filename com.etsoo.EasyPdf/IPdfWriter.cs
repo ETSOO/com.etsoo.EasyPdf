@@ -32,8 +32,16 @@ namespace com.etsoo.EasyPdf
         /// 开始一个新页面
         /// </summary>
         /// <param name="setup">Page setup action</param>
+        /// <returns>Page</returns>
+        Task<IPdfPage> NewPageAsync(Action<IPdfPage>? setup = null);
+
+        /// <summary>
+        /// Write block element
+        /// 输出块元素
+        /// </summary>
+        /// <param name="b">Block element</param>
         /// <returns>Task</returns>
-        Task NewPageAsync(Action<IPdfPage>? setup = null);
+        Task WriteAsync(PdfBlock b);
 
         /// <summary>
         /// Async add dictionary data object
@@ -47,9 +55,20 @@ namespace com.etsoo.EasyPdf
         /// Write font
         /// 输出字体
         /// </summary>
+        /// <param name="operators">Operator bytes</param>
+        /// <param name="style">Current style</param>
+        /// <param name="required">Font reference is required</param>
+        /// <returns>Current font</returns>
+        IPdfFont WriteFont(List<byte> operators, PdfStyle style, bool required = false);
+
+        /// <summary>
+        /// Write font
+        /// 输出字体
+        /// </summary>
         /// <param name="stream">Stream to write</param>
         /// <param name="style">Current style</param>
+        /// <param name="required">Font reference is required</param>
         /// <returns>Current font</returns>
-        ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style);
+        ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style, bool required = false);
     }
 }

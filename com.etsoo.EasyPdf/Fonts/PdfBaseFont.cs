@@ -276,7 +276,8 @@ namespace com.etsoo.EasyPdf.Fonts
         /// <returns>Local size</returns>
         public float FUnitToLocal(int fUnit, float size)
         {
-            return fUnit * size / Head.unitsPerEm;
+            return fUnit * size / 1000F;
+            //return fUnit * size / Head.unitsPerEm;
         }
 
         internal PdfCIDFontDic GetCIDFontType(PdfObject fontDescriptor, string fontName)
@@ -445,6 +446,12 @@ namespace com.etsoo.EasyPdf.Fonts
         }
 
         /// <summary>
+        /// Is multiple-byte codes
+        /// 是否多字节编码
+        /// </summary>
+        public bool MultipleByte => CMaps.Any(g => g.Platform == FontNamePlatform.Unicode && g.EncodingID > 1);
+
+        /// <summary>
         /// Get glyph width
         /// 获取字形宽度
         /// </summary>
@@ -543,14 +550,14 @@ namespace com.etsoo.EasyPdf.Fonts
                 "12 dict begin\n" +
                 "begincmap\n" +
                 "/CIDSystemInfo\n" +
-                "<< /Registry (TTX+0)\n" +
-                "/Ordering (T42UV)\n" +
+                "<< /Registry (Adobe)\n" +
+                "/Ordering (UCS)\n" +
                 "/Supplement 0\n" +
                 ">> def\n" +
-                "/CMapName /TTX+0 def\n" +
+                "/CMapName /Adobe-Identity-UCS def\n" +
                 "/CMapType 2 def\n" +
                 "1 begincodespacerange\n" +
-                string.Format("<{0:X4}><{1:X4}>\n", 0, (len -1)) +
+                "<0000> <FFFF>\n" +
                 "endcodespacerange\n");
 
             var size = 0;
@@ -560,18 +567,18 @@ namespace com.etsoo.EasyPdf.Fonts
                 {
                     if (k != 0)
                     {
-                        buf.Append("endbfrange\n");
+                        buf.Append("endbfchar\n");
                     }
-                    size = Math.Min(100, len - k);
-                    buf.Append(size).Append(" beginbfrange\n");
+                    size = Math.Min(10000, len - k);
+                    buf.Append(size).Append(" beginbfchar\n");
                 }
                 --size;
                 var (Key, Glyph) = metrics[k];
-                buf.Append(string.Format("<{0:X4}><{0:X4}><{1:X4}>\n", Glyph, Key));
+                buf.Append(string.Format("<{0:X4}> <{1:X4}>\n", Glyph, Key));
             }
 
             buf.Append(
-                "endbfrange\n" +
+                "endbfchar\n" +
                 "endcmap\n" +
                 "CMapName currentdict /CMap defineresource pop\n" +
                 "end end");
@@ -754,12 +761,12 @@ namespace com.etsoo.EasyPdf.Fonts
             aw.Position = 0;
 
 
+            // For debug
             // Try to load the subset and reparse again
             // await pdf.Fonts.LoadAsync("D:\\subset.ttf")
-            var fileStream = File.OpenWrite("D:\\subset.ttf");
-            await aw.CopyToAsync(fileStream);
-            aw.Position = 0;
-
+            //var fileStream = File.OpenWrite("D:\\subset.ttf");
+            //await aw.CopyToAsync(fileStream);
+            //aw.Position = 0;
 
             // Return stream dictionary
             return new PdfFontStream(await aw.ToBytesAsync())

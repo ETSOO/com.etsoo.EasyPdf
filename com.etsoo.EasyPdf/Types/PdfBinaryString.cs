@@ -8,13 +8,45 @@ namespace com.etsoo.EasyPdf.Types
     /// PDF binary string
     /// PDF 二进制字符串
     /// </summary>
-    internal record PdfBinaryString(string Value, Encoding? TextEncoding = null) : IPdfType<string>
+    internal record PdfBinaryString : IPdfType<byte[]>
     {
-        public static PdfBinaryString Parse(ReadOnlySpan<byte> bytes)
+        /// <summary>
+        /// Bytes value
+        /// 字节值
+        /// </summary>
+        public byte[] Value { get; }
+
+        /// <summary>
+        /// Encoding
+        /// 编码
+        /// </summary>
+        public Encoding Encoding { get; }
+
+        public PdfBinaryString(ReadOnlySpan<byte> bytes)
         {
             // Hexadecimal strings
-            var value = bytes.FromHexCoded(out var encoding);
-            return new PdfBinaryString(value, encoding);
+            Value = bytes.FromHexCodedBytes(out var encoding).ToArray();
+            Encoding = encoding;
+        }
+
+        public PdfBinaryString(byte[] bytes, Encoding encoding)
+        {
+            Value = bytes;
+            Encoding = encoding;
+        }
+
+        public PdfBinaryString(string input, Encoding? encoding = null)
+        {
+            encoding ??= PdfEncoding.UTF16;
+            Value = encoding.GetBytes(input);
+            Encoding = encoding;
+        }
+
+        public PdfBinaryString(IEnumerable<char> chars, Encoding? encoding = null)
+        {
+            encoding ??= PdfEncoding.UTF16;
+            Value = encoding.GetBytes(chars.ToArray());
+            Encoding = encoding;
         }
 
         public bool KeyEquals(string item)
@@ -29,16 +61,13 @@ namespace com.etsoo.EasyPdf.Types
 
         public async Task WriteToAsync(Stream stream, bool withPreamble)
         {
-            // Encoding
-            var encoding = TextEncoding ?? PdfEncoding.UTF16;
-
             await Task.CompletedTask;
 
             // Hexadecimal strings;
-            var bytes = encoding.GetBytes(Value);
+            var bytes = Value;
             if (withPreamble)
             {
-                bytes = [.. encoding.GetPreamble(), .. bytes];
+                bytes = [.. Encoding.GetPreamble(), .. bytes];
             }
 
             stream.WriteByte(PdfConstants.LessThanSignByte);

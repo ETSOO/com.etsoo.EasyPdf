@@ -22,6 +22,12 @@ namespace com.etsoo.EasyPdf.Fonts
         public bool IsMatch { get; }
 
         /// <summary>
+        /// Is multiple-byte codes
+        /// 是否多字节编码
+        /// </summary>
+        public bool MultipleByte => BaseFont.MultipleByte;
+
+        /// <summary>
         /// Size
         /// 字体大小
         /// </summary>
@@ -50,6 +56,12 @@ namespace com.etsoo.EasyPdf.Fonts
         /// 行间距
         /// </summary>
         public float LineGap => BaseFont.GetLineGap(Size);
+
+        /// <summary>
+        /// Line height
+        /// 行高
+        /// </summary>
+        public float LineHeight => Size + LineGap;
 
         /// <summary>
         /// Subscript size and offset
@@ -100,16 +112,20 @@ namespace com.etsoo.EasyPdf.Fonts
         }
 
         /// <summary>
-        /// Write chunk
-        /// 写内容块
+        /// Precalculate chunk
+        /// 预计算内容块
         /// </summary>
-        /// <param name="stream">Stream</param>
         /// <param name="chunk">Chunk</param>
-        /// <returns>Task</returns>
-        public async Task WriteAsync(Stream stream, PdfChunk chunk)
+        /// <returns>Result</returns>
+        public (char, float)[] Precalculate(PdfChunk chunk)
         {
+            // Truetype, Identity encoding
+            // Step 1: char code (cid) => glyph index
+            // Step 2: font subset, glyph index to glyph to display
+            // Step 3: ToUnicode reverse glyph index to unicode when read text
+
             var length = chunk.Content.Length;
-            var glyfs = new (int GlyphId, float Width)[length];
+            var glyfs = new (char Item, float Width)[length];
             for (var c = 0; c < length; c++)
             {
                 var one = (int)chunk.Content.Span[c];
@@ -126,30 +142,27 @@ namespace com.etsoo.EasyPdf.Fonts
                     // Font cache
                     cmap[one] = (glyphId, width, gwidth);
 
-                    glyfs[c] = (glyphId, width);
+                    glyfs[c] = ((char)glyphId, width);
                 }
                 else
                 {
-                    glyfs[c] = (citem.GlyphId, citem.Width);
+                    glyfs[c] = ((char)citem.GlyphId, citem.Width);
                 }
             }
+            return glyfs;
+        }
 
-            // Truetype, Identity encoding
-            // Step 1: char code (cid) => glyph index
-            // Step 2: font subset, glyph index to glyph to display
-            // Step 3: ToUnicode reverse glyph index to unicode when read text
-            var newText = string.Concat(glyfs.Select(g => (char)g.GlyphId));
-            var content = new PdfBinaryString(newText);
+        /// <summary>
+        /// Write chunk
+        /// 写内容块
+        /// </summary>
+        /// <param name="stream">Stream</param>
+        /// <param name="input">Input content</param>
+        /// <returns>Task</returns>
+        public async Task WriteAsync(Stream stream, IEnumerable<char> input)
+        {
+            var content = new PdfBinaryString(input);
             await content.WriteToAsync(stream, false);
-
-            if (chunk.NewLine)
-            {
-                await stream.WriteAsync(PdfOperator.SQ);
-            }
-            else
-            {
-                await stream.WriteAsync(PdfOperator.Tj);
-            }
         }
     }
 }

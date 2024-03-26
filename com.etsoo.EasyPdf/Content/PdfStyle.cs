@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Numerics;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -77,6 +78,12 @@ namespace com.etsoo.EasyPdf.Content
         public float? LetterSpacing { get; set; }
 
         /// <summary>
+        /// Line height
+        /// 行高
+        /// </summary>
+        public float? LineHeight { get; set; }
+
+        /// <summary>
         /// Margin
         /// 外延距离
         /// </summary>
@@ -93,6 +100,12 @@ namespace com.etsoo.EasyPdf.Content
         /// 位置
         /// </summary>
         public string? Position { get; set; }
+
+        /// <summary>
+        /// Text align
+        /// 文本对齐
+        /// </summary>
+        public PdfTextAlign? TextAlign { get; set; }
 
         /// <summary>
         /// Text decoration
@@ -150,6 +163,8 @@ namespace com.etsoo.EasyPdf.Content
                 FontSize = CalculatePropertyValue((style) => style.FontSize),
                 FontStyle = CalculatePropertyValue((style) => style.FontStyle),
                 LetterSpacing = CalculatePropertyValue((style) => style.LetterSpacing),
+                LineHeight = CalculatePropertyValue((style) => style.LineHeight),
+                TextAlign = CalculatePropertyValue((style) => style.TextAlign),
                 TextDecoration = CalculatePropertyValue((style) => style.TextDecoration),
                 TextStyle = CalculatePropertyValue((style) => style.TextStyle),
                 WordSpacing = CalculatePropertyValue((style) => style.WordSpacing),
@@ -168,17 +183,38 @@ namespace com.etsoo.EasyPdf.Content
         }
 
         /// <summary>
+        /// Get line height
+        /// 获取行高
+        /// </summary>
+        /// <param name="fontLineHeight">Font default line height in pt</param>
+        /// <returns>Result</returns>
+        public float GetLineHeight(float fontLineHeight)
+        {
+            return LineHeight?.PxToPt() ?? fontLineHeight;
+        }
+
+        /// <summary>
         /// Get rectangle
         /// 获取矩形
         /// </summary>
         /// <param name="size">Default size</param>
+        /// <param name="point">Start point inside the rectangle</param>
         /// <returns>Result</returns>
-        public RectangleF GetRectangle(SizeF? size = null)
+        public RectangleF GetRectangle(SizeF? size = null, Vector2? point = null)
         {
             var width = Width?.PxToPt() ?? size?.Width ?? 0;
             var height = Height?.PxToPt() ?? size?.Height ?? 0;
             var marginLeft = Margin?.Left.PxToPt() ?? 0;
             var marginTop = Margin?.Top.PxToPt() ?? 0;
+
+            if (point.HasValue)
+            {
+                var p = point.Value;
+                marginLeft += p.X;
+                marginTop += p.Y;
+                width -= p.X;
+                height -= p.Y;
+            }
 
             if (Position?.Equals(PositonAbsolte, StringComparison.OrdinalIgnoreCase) is true
                 || Position?.Equals(PositonRelative, StringComparison.OrdinalIgnoreCase) is true)

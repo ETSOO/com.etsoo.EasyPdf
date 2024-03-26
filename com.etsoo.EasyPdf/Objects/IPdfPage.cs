@@ -1,6 +1,5 @@
 ﻿using com.etsoo.EasyPdf.Content;
-using com.etsoo.EasyPdf.Dto;
-using com.etsoo.EasyPdf.Fonts;
+using com.etsoo.EasyPdf.Support;
 using System.Drawing;
 using System.Numerics;
 
@@ -12,6 +11,18 @@ namespace com.etsoo.EasyPdf.Objects
     /// </summary>
     public interface IPdfPage
     {
+        /// <summary>
+        /// Current drawing point inside the content rectangle
+        /// 内容矩形内的当前绘制点
+        /// </summary>
+        PdfPoint CurrentPoint { get; }
+
+        /// <summary>
+        /// Page's content rectangle
+        /// 页面的内容矩形
+        /// </summary>
+        RectangleF ContentRect { get; }
+
         /// <summary>
         /// Page data
         /// 页面数据
@@ -38,6 +49,14 @@ namespace com.etsoo.EasyPdf.Objects
         Task BeginTextAsync();
 
         /// <summary>
+        /// Calculate point
+        /// 计算点
+        /// </summary>
+        /// <param name="point">Point</param>
+        /// <returns>Result</returns>
+        Vector2 CalculatePoint(Vector2 point);
+
+        /// <summary>
         /// End text output
         /// 结束文本输出
         /// </summary>
@@ -48,18 +67,18 @@ namespace com.etsoo.EasyPdf.Objects
         /// Move to the point
         /// 移动到点
         /// </summary>
-        /// <param name="point">The point</param>
-        /// <returns>Task</returns>
-        Task MoveToAsync(Vector2 point);
+        /// <param name="point">The local point</param>
+        /// <returns>Global drawing point</returns>
+        Task<Vector2> MoveToAsync(Vector2 point);
 
         /// <summary>
-        /// Move text output to the point
+        /// Move text output to the point (cm)
         /// 移动文本输出到点
         /// </summary>
         /// <param name="point">Start point</param>
-        /// <param name="font">Font</param>
-        /// <returns>Task</returns>
-        Task MoveToAsync(Vector2 point, IPdfFont font);
+        /// <param name="lineHeight">Line height</param>
+        /// <returns>Global drawing point</returns>
+        Task<Vector2> MoveToAsync(Vector2 point, float lineHeight);
 
         /// <summary>
         /// Restore graphics state
@@ -82,6 +101,13 @@ namespace com.etsoo.EasyPdf.Objects
         /// <param name="color">Color</param>
         /// <returns>Task</returns>
         Task SetFontColor(PdfColor? color);
+
+        /// <summary>
+        /// Update point, return global drawing point
+        /// 更新点，返回全局绘制点
+        /// </summary>
+        /// <param name="point">Relative point</param>
+        void UpdatePoint(Vector2 point);
 
         /// <summary>
         /// Write border and background

@@ -1,5 +1,4 @@
 ﻿using com.etsoo.EasyPdf.Content;
-using com.etsoo.EasyPdf.Dto;
 using com.etsoo.EasyPdf.Fonts;
 using com.etsoo.EasyPdf.Objects;
 

@@ -12,6 +12,12 @@ namespace com.etsoo.EasyPdf.Fonts
         bool IsMatch { get; }
 
         /// <summary>
+        /// Is multiple-byte codes
+        /// 是否多字节编码
+        /// </summary>
+        bool MultipleByte { get; }
+
+        /// <summary>
         /// Size
         /// 字体大小
         /// </summary>
@@ -42,6 +48,12 @@ namespace com.etsoo.EasyPdf.Fonts
         float LineGap { get; }
 
         /// <summary>
+        /// Line height
+        /// 行高
+        /// </summary>
+        float LineHeight { get; }
+
+        /// <summary>
         /// Subscript size and offset
         /// 下标大小和偏移量
         /// </summary>
@@ -58,19 +70,27 @@ namespace com.etsoo.EasyPdf.Fonts
         PdfSizeAndOffset Superscript { get; }
 
         /// <summary>
-        /// Write the font
-        /// 输出字体
+        /// Precalculate chunk
+        /// 预计算内容块
         /// </summary>
-        /// <param name="writer">Writer</param>
-        Task WriteFontAsync(IPdfWriter writer);
+        /// <param name="chunk">Chunk</param>
+        /// <returns>Result</returns>
+        (char, float)[] Precalculate(PdfChunk chunk);
 
         /// <summary>
         /// Write chunk
         /// 写内容块
         /// </summary>
         /// <param name="stream">Stream</param>
-        /// <param name="chunk">Chunk</param>
+        /// <param name="input">Input content</param>
         /// <returns>Task</returns>
-        Task WriteAsync(Stream stream, PdfChunk chunk);
+        Task WriteAsync(Stream stream, IEnumerable<char> input);
+
+        /// <summary>
+        /// Write the font
+        /// 输出字体
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        Task WriteFontAsync(IPdfWriter writer);
     }
 }

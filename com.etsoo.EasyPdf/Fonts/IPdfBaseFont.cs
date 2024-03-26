@@ -67,6 +67,12 @@ namespace com.etsoo.EasyPdf.Fonts
         PdfSizeAndOffset GetSuperscript(float size);
 
         /// <summary>
+        /// Is multiple-byte codes
+        /// 是否多字节编码
+        /// </summary>
+        bool MultipleByte { get; }
+
+        /// <summary>
         /// Write to stream
         /// 写入流
         /// </summary>

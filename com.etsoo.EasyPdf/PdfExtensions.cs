@@ -56,11 +56,24 @@ namespace com.etsoo.EasyPdf
         /// <returns>Result</returns>
         public static string FromHexCoded(this ReadOnlySpan<byte> bytes, out Encoding encoding)
         {
+            var conent = FromHexCodedBytes(bytes, out encoding);
+            return encoding.GetString(conent);
+        }
+
+        /// <summary>
+        /// Get bytes from Hex coded bytes
+        /// 从十六进制编码字节中获取字节数组
+        /// </summary>
+        /// <param name="bytes">Hex coded bytes</param>
+        /// <param name="encoding">Text encoding detected</param>
+        /// <returns>Result</returns>
+        public static ReadOnlySpan<byte> FromHexCodedBytes(this ReadOnlySpan<byte> bytes, out Encoding encoding)
+        {
             byte bom;
             (encoding, bom) = PdfEncoding.DetectHex(bytes);
 
             var filter = new ASCIIHexFilter();
-            return encoding.GetString(filter.Decode(bytes[bom..]));
+            return filter.Decode(bytes[bom..]);
         }
 
         public static IPdfType[] Parse(this ReadOnlySpan<byte> data)
@@ -169,7 +182,7 @@ namespace com.etsoo.EasyPdf
                         throw new InvalidDataException("No binary string ending boundary '>'");
                     }
 
-                    var r = PdfBinaryString.Parse(nextData[..pos]);
+                    var r = new PdfBinaryString(nextData[..pos]);
                     items.Add(r);
                     i += pos + 1;
 

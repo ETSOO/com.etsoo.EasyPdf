@@ -1,6 +1,5 @@
 ﻿using com.etsoo.EasyPdf.Content;
-using com.etsoo.EasyPdf.Dto;
-using com.etsoo.EasyPdf.Fonts;
+using com.etsoo.EasyPdf.Support;
 using com.etsoo.EasyPdf.Types;
 using System.Drawing;
 using System.Numerics;
@@ -82,10 +81,18 @@ namespace com.etsoo.EasyPdf.Objects
         private RectangleF contentRect;
 
         /// <summary>
-        /// Last identifier point
-        /// 最后标识点
+        /// Page's content rectangle
+        /// 页面的内容矩形
         /// </summary>
-        private Vector2 lastPoint = new();
+        public RectangleF ContentRect => contentRect;
+
+        private readonly PdfPoint currentPoint = new();
+
+        /// <summary>
+        /// Current drawing point inside the content rectangle
+        /// 内容矩形内的当前绘制点
+        /// </summary>
+        public PdfPoint CurrentPoint => currentPoint;
 
         /// <summary>
         /// Constructor
@@ -134,12 +141,18 @@ namespace com.etsoo.EasyPdf.Objects
             await Stream.WriteAsync(PdfOperator.BT);
         }
 
+        /// <summary>
+        /// Calculate point
+        /// 计算点
+        /// </summary>
+        /// <param name="point">Point</param>
+        /// <returns>Result</returns>
         public Vector2 CalculatePoint(Vector2 point)
         {
             return point with
             {
-                X = point.X.PxToPt() + contentRect.X,
-                Y = contentRect.Height + contentRect.Y - point.Y.PxToPt()
+                X = point.X + contentRect.X,
+                Y = contentRect.Height + contentRect.Y - point.Y
             };
         }
 
@@ -172,29 +185,35 @@ namespace com.etsoo.EasyPdf.Objects
         /// Move to the point
         /// 移动到点
         /// </summary>
-        /// <param name="point">The point</param>
-        /// <returns>Task</returns>
-        public async Task MoveToAsync(Vector2 point)
+        /// <param name="point">The local point</param>
+        /// <returns>Global drawing point</returns>
+        public async Task<Vector2> MoveToAsync(Vector2 point)
         {
-            lastPoint = CalculatePoint(point);
-            await Stream.WriteAsync(PdfOperator.Zm(lastPoint));
+            UpdatePoint(point);
+            var globalPoint = CalculatePoint(point);
+            await Stream.WriteAsync(PdfOperator.Zm(globalPoint));
+            return globalPoint;
         }
 
         /// <summary>
-        /// Move text output to the point
+        /// Move text output to the point (cm)
         /// 移动文本输出到点
         /// </summary>
         /// <param name="point">Start point</param>
-        /// <param name="font">Font</param>
-        /// <returns>Task</returns>
-        public async Task MoveToAsync(Vector2 point, IPdfFont font)
+        /// <param name="lineHeight">Line height</param>
+        /// <returns>Global drawing point</returns>
+        public async Task<Vector2> MoveToAsync(Vector2 point, float lineHeight)
         {
-            lastPoint = CalculatePoint(point);
+            point.Y += lineHeight;
+            UpdatePoint(point);
+
+            var globalPoint = CalculatePoint(point);
 
             // Deduct line height
-            lastPoint.Y -= font.Size - 1;
+            // Move to the next line
+            await Stream.WriteAsync(PdfOperator.Tm(1, 0, 0, 1, globalPoint.X, globalPoint.Y, true));
 
-            await Stream.WriteAsync(PdfOperator.Td(lastPoint));
+            return globalPoint;
         }
 
         public async Task PrepareAsync(IPdfWriter writer)
@@ -217,15 +236,6 @@ namespace com.etsoo.EasyPdf.Objects
 
             // Page available content size
             contentRect = GetPageRectangle(pageRect, style);
-
-            // Begin text output
-            await BeginTextAsync();
-
-            // Page level font
-            var font = await writer.WriteFontAsync(Stream, style);
-
-            // Move to the start point
-            await MoveToAsync(lastPoint, font);
         }
 
         /// <summary>
@@ -262,10 +272,27 @@ namespace com.etsoo.EasyPdf.Objects
             }
         }
 
-        public async Task<bool> WriteAsync(PdfBlock block, IPdfWriter writer)
+        /// <summary>
+        /// Update drawing point
+        /// 更新绘制点
+        /// </summary>
+        public void UpdatePoint(Vector2 point)
+        {
+            currentPoint.X = point.X;
+            currentPoint.Y = point.Y;
+        }
+
+        /// <summary>
+        /// Write block elment
+        /// 输出块元素
+        /// </summary>
+        /// <param name="block">Block element</param>
+        /// <param name="writer">Writer</param>
+        /// <returns>Task</returns>
+        public async Task WriteAsync(PdfBlock block, IPdfWriter writer)
         {
             block.Style.Parent = Style;
-            return await block.WriteAsync(this, writer);
+            await block.WriteAsync(this, writer);
         }
 
         /// <summary>
@@ -355,13 +382,29 @@ namespace com.etsoo.EasyPdf.Objects
             }
         }
 
-        public async Task WriteEndAsync()
+        /// <summary>
+        /// Page writing end
+        /// 页面写入结束
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <returns>Task</returns>
+        public async Task WriteEndAsync(IPdfWriter writer)
         {
-            // End text output
-            await EndTextAsync();
+            // Finish writing
+            await using (Stream)
+            {
+                // Back to the beginning
+                Stream.Position = 0;
 
-            // Back to begin
-            Stream.Position = 0;
+                // Pdf content stream
+                var pageStream = new PdfStreamDic(Stream);
+
+                // Set content
+                Contents = await writer.WriteDicAsync(pageStream);
+
+                // Dispose
+                await Stream.DisposeAsync();
+            }
         }
     }
 }

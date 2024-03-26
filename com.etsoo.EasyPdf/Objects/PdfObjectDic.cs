@@ -52,6 +52,9 @@ namespace com.etsoo.EasyPdf.Objects
                 throw new NullReferenceException(nameof(Obj));
             }
 
+            // Line break for clear source code visibility
+            stream.WriteByte(13);
+
             // 1 0 obj in single line
             await Obj.WriteToAsync(stream);
             stream.WriteByte(PdfConstants.LineFeedByte);

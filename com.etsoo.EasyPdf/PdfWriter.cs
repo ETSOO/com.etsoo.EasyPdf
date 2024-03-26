@@ -23,6 +23,7 @@ namespace com.etsoo.EasyPdf
         private PdfPage? currentPage;
         private PdfObject? metadataObj;
         private IPdfFont? currentFont;
+        private float? currentLineHeight;
 
         /// <summary>
         /// Document
@@ -92,8 +93,8 @@ namespace com.etsoo.EasyPdf
         /// 开始一个新页面
         /// </summary>
         /// <param name="setup">Page setup action</param>
-        /// <returns>Task</returns>
-        public async Task NewPageAsync(Action<IPdfPage>? setup = null)
+        /// <returns>Page</returns>
+        public async Task<IPdfPage> NewPageAsync(Action<IPdfPage>? setup = null)
         {
             if (currentPage is null)
             {
@@ -103,6 +104,7 @@ namespace com.etsoo.EasyPdf
             }
             else
             {
+                // Write the current (very soon as previous) page
                 await WritePageAsync(currentPage);
             }
 
@@ -110,29 +112,29 @@ namespace com.etsoo.EasyPdf
             currentFont = null;
 
             // Create a new page
-            var pageData = pageTree.PageData with { };
-            currentPage = new PdfPage(CreateObj(), pageTree, pageData, new PdfStyle(Document.Style));
+            var data = currentPage?.Data ?? pageTree.PageData;
+            var pageData = data with { };
+            var style = currentPage?.Style ?? new PdfStyle(Document.Style);
+            currentPage = new PdfPage(CreateObj(), pageTree, pageData, style);
 
             // Setup
             setup?.Invoke(currentPage);
 
             // Prepare for rendering
             await currentPage.PrepareAsync(this);
+
+            return currentPage;
         }
 
         /// <summary>
-        /// Add paragraph
-        /// 添加段落
+        /// Write block element
+        /// 输出块元素
         /// </summary>
-        /// <param name="p">Paragraph</param>
+        /// <param name="b">Block element</param>
         /// <returns>Task</returns>
-        public async Task AddAsync(PdfBlock p)
+        public async Task WriteAsync(PdfBlock b)
         {
-            if (await currentPage!.WriteAsync(p, this))
-            {
-                // Auto create new page without setup action
-                await NewPageAsync();
-            }
+            await currentPage!.WriteAsync(b, this);
         }
 
         /// <summary>
@@ -140,7 +142,7 @@ namespace com.etsoo.EasyPdf
         /// 创建字体
         /// </summary>
         /// <param name="familyName">Family name</param>
-        /// <param name="size">Size in pt (not px)</param>
+        /// <param name="size">Size in pt</param>
         /// <param name="style">Style</param>
         /// <returns>Font</returns>
         public IPdfFont CreateFont(string familyName, float size, PdfFontStyle style = PdfFontStyle.Regular)
@@ -160,10 +162,11 @@ namespace com.etsoo.EasyPdf
         /// Write font
         /// 输出字体
         /// </summary>
-        /// <param name="stream">Stream to write</param>
+        /// <param name="operators">Operator bytes</param>
         /// <param name="style">Current style</param>
+        /// <param name="required">Font reference is required</param>
         /// <returns>Current font</returns>
-        public async ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style)
+        public IPdfFont WriteFont(List<byte> operators, PdfStyle style, bool required = false)
         {
             var familyName = style.Font;
             if (string.IsNullOrEmpty(familyName))
@@ -171,17 +174,29 @@ namespace com.etsoo.EasyPdf
                 return currentFont!;
             }
 
+            // Size is px, the to pt
             var size = style.FontSize.GetValueOrDefault(16).PxToPt();
             var fontStyle = style.FontStyle ?? PdfFontStyle.Regular;
 
             var font = CreateFont(familyName, size, fontStyle);
 
             // Avoid duplicate font operators
-            if (currentFont?.RefName != font.RefName)
+            var diffRef = currentFont?.RefName != font.RefName;
+            if (required || diffRef || currentFont?.Size != font.Size)
             {
-                await stream.WriteAsync(PdfOperator.Tf(font.RefName, size));
-                await stream.WriteAsync(PdfOperator.TL(size + font.LineGap));
+                operators.AddRange(PdfOperator.Tf(font.RefName, size));
+            }
 
+            var fontLineHeight = font.LineHeight;
+            var lineHeight = style.GetLineHeight(fontLineHeight);
+            if (required || diffRef || lineHeight != currentLineHeight)
+            {
+                operators.AddRange(PdfOperator.TL(lineHeight));
+                currentLineHeight = lineHeight;
+            }
+
+            if (diffRef)
+            {
                 currentFont = font;
 
                 // Add to current page
@@ -194,20 +209,26 @@ namespace com.etsoo.EasyPdf
             return font;
         }
 
+        /// <summary>
+        /// Write font
+        /// 输出字体
+        /// </summary>
+        /// <param name="stream">Stream to write</param>
+        /// <param name="style">Current style</param>
+        /// <param name="required">Font reference is required</param>
+        /// <returns>Current font</returns>
+        public async ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style, bool required = false)
+        {
+            var operators = new List<byte>();
+            var font = WriteFont(operators, style, required);
+            await stream.WriteAsync(operators.ToArray());
+            return font;
+        }
+
         private async Task WritePageAsync(PdfPage page)
         {
-            await using (page.Stream)
-            {
-                // Finish writing
-                await page.WriteEndAsync();
-
-                // Pdf stream
-                var pageStream = new PdfStreamDic(page.Stream);
-                page.Contents = await WriteDicAsync(pageStream);
-
-                // Dispose
-                await page.Stream.DisposeAsync();
-            }
+            // Finish writing
+            await page.WriteEndAsync(this);
 
             // Write page
             var pageObj = await WriteDicAsync(page);
@@ -243,6 +264,7 @@ namespace com.etsoo.EasyPdf
             if (currentPage != null)
             {
                 await WritePageAsync(currentPage);
+                currentPage = null;
             }
 
             // Write page tree

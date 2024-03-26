@@ -1,5 +1,4 @@
-﻿using com.etsoo.EasyPdf.Dto;
-using com.etsoo.EasyPdf.Types;
+﻿using com.etsoo.EasyPdf.Types;
 
 namespace com.etsoo.EasyPdf.Objects
 {
