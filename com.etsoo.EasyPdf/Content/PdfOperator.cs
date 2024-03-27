@@ -264,6 +264,7 @@ namespace com.etsoo.EasyPdf.Content
 
         /// <summary>
         /// Word spacing affects the space between words
+        /// only works with single-byte character codes (simple font)
         /// </summary>
         /// <param name="spacing">Spacing</param>
         /// <returns>Bytes</returns>

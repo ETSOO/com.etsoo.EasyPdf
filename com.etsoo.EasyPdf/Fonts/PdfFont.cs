@@ -22,12 +22,6 @@ namespace com.etsoo.EasyPdf.Fonts
         public bool IsMatch { get; }
 
         /// <summary>
-        /// Is multiple-byte codes
-        /// 是否多字节编码
-        /// </summary>
-        public bool MultipleByte => BaseFont.MultipleByte;
-
-        /// <summary>
         /// Size
         /// 字体大小
         /// </summary>

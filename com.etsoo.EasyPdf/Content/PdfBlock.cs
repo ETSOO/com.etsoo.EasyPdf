@@ -147,7 +147,7 @@ namespace com.etsoo.EasyPdf.Content
 
             if (line.FullWidth && line.Width != width)
             {
-                if (line.Words > 1)
+                if (line.Words < 0)
                 {
                     // Adjust by word spacing
                     var tw = (width - line.Width) / line.Words;

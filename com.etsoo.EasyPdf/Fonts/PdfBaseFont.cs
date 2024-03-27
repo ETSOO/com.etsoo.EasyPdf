@@ -231,7 +231,7 @@ namespace com.etsoo.EasyPdf.Fonts
         {
             get
             {
-                return CMaps.Any(g => g.Platform == FontNamePlatform.Windows && g.EncodingID == 0);
+                return CMaps.Any(g => g.Platform == FontNamePlatform.Windows && g.EncodingID == 1);
             }
         }
 
@@ -367,7 +367,7 @@ namespace com.etsoo.EasyPdf.Fonts
             var flags = 0;
             if (Post.isFixedPitch)
                 flags |= 1;
-            flags |= fontSpecific ? 4 : 32;
+            flags |= (fontSpecific ? 4 : 32);
             if ((Head.macStyle & 2) != 0)
                 flags |= 64;
             if ((Head.macStyle & 1) != 0)
@@ -444,12 +444,6 @@ namespace com.etsoo.EasyPdf.Fonts
             // should be mapped to glyph index 0
             return 0;
         }
-
-        /// <summary>
-        /// Is multiple-byte codes
-        /// 是否多字节编码
-        /// </summary>
-        public bool MultipleByte => CMaps.Any(g => g.Platform == FontNamePlatform.Unicode && g.EncodingID > 1);
 
         /// <summary>
         /// Get glyph width
@@ -542,7 +536,9 @@ namespace com.etsoo.EasyPdf.Fonts
         // Convert the character code to Unicode
         private async Task<PdfStreamDic> ToUnicodeAsync()
         {
-            var metrics = UsedGlyphs.Where(g => g.Key >= 255).Select(g => (g.Key, g.Value.Glyph)).ToArray();
+            // Previous filter ".Where(g => g.Key >= 255)" is wrong
+            // will causing copy / paste result unreadable
+            var metrics = UsedGlyphs.Select(g => (g.Key, g.Value.Glyph)).ToArray();
             var len = metrics.Length;
 
             var buf = new StringBuilder(

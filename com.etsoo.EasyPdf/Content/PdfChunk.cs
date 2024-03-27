@@ -176,6 +176,10 @@ namespace com.etsoo.EasyPdf.Content
 
                             // Next character after the space
                             index = lastBlankIndex + 1;
+
+                            // Replace the current character item
+                            item = chars[index].item;
+                            character = Content.Span[index];
                         }
 
                         // No more space to continue

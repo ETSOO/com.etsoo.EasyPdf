@@ -15,6 +15,7 @@ namespace com.etsoo.EasyPdf
     /// 3. A cross-reference table containing information about the indirect objects in the file.
     /// 4. A trailer giving the location of the cross-reference table and of certain special objects within the body of the file.
     /// https://stackoverflow.com/questions/10287602/show-pdf-with-all-operators to decode PDF file
+    /// qpdf --qdf etsoo2.pdf source2.pdf
     /// Example files included in the folder "Resources" of the project com.etsoo.EasyPdf.Tests.csproj
     /// </summary>
     public class PdfDocument : IPdfDocument, IDisposable, IAsyncDisposable

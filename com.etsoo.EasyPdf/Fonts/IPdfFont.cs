@@ -12,12 +12,6 @@ namespace com.etsoo.EasyPdf.Fonts
         bool IsMatch { get; }
 
         /// <summary>
-        /// Is multiple-byte codes
-        /// 是否多字节编码
-        /// </summary>
-        bool MultipleByte { get; }
-
-        /// <summary>
         /// Size
         /// 字体大小
         /// </summary>
