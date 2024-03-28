@@ -114,13 +114,6 @@ namespace com.etsoo.EasyPdf.Content
         public PdfTextDecoration? TextDecoration { get; set; }
 
         /// <summary>
-        /// Text style
-        /// 文本样式
-        /// </summary>
-        public PdfTextStyle? TextStyle { get; set; }
-
-
-        /// <summary>
         /// Positioned element's top distance
         /// 定位元素的顶端距离
         /// </summary>
@@ -166,7 +159,6 @@ namespace com.etsoo.EasyPdf.Content
                 LineHeight = CalculatePropertyValue((style) => style.LineHeight),
                 TextAlign = CalculatePropertyValue((style) => style.TextAlign),
                 TextDecoration = CalculatePropertyValue((style) => style.TextDecoration),
-                TextStyle = CalculatePropertyValue((style) => style.TextStyle),
                 WordSpacing = CalculatePropertyValue((style) => style.WordSpacing),
 
                 // Not inherit

@@ -182,6 +182,35 @@ namespace com.etsoo.EasyPdf.Objects
         }
 
         /// <summary>
+        /// Move to the current point operator
+        /// 移动到当前点操作
+        /// </summary>
+        /// <param name="adjust">The adjustment</param>
+        /// <returns>Bytes</returns>
+        public byte[] CurrentPointOperator(Vector2? adjust = null)
+        {
+            var point = currentPoint.ToVector2();
+            if (adjust.HasValue)
+            {
+                point.X += adjust.Value.X;
+                point.Y += adjust.Value.Y;
+            }
+
+            return MovingOperator(point, false);
+        }
+
+        /// <summary>
+        /// Operator for Moving to the point
+        /// </summary>
+        /// <param name="globalPoint">Global point</param>
+        /// <param name="cm">cm vs Tm</param>
+        /// <returns>Bytes</returns>
+        protected byte[] MovingOperator(Vector2 globalPoint, bool cm = true)
+        {
+            return PdfOperator.Tm(1, 0, 0, 1, globalPoint.X, globalPoint.Y, cm);
+        }
+
+        /// <summary>
         /// Move to the point
         /// 移动到点
         /// </summary>
@@ -211,7 +240,7 @@ namespace com.etsoo.EasyPdf.Objects
 
             // Deduct line height
             // Move to the next line
-            await Stream.WriteAsync(PdfOperator.Tm(1, 0, 0, 1, globalPoint.X, globalPoint.Y, true));
+            await Stream.WriteAsync(MovingOperator(globalPoint));
 
             return globalPoint;
         }

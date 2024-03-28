@@ -165,13 +165,13 @@ namespace com.etsoo.EasyPdf
         /// <param name="operators">Operator bytes</param>
         /// <param name="style">Current style</param>
         /// <param name="required">Font reference is required</param>
-        /// <returns>Current font</returns>
-        public IPdfFont WriteFont(List<byte> operators, PdfStyle style, bool required = false)
+        /// <returns>Current font and changed or not</returns>
+        public (IPdfFont font, bool fontChanged) WriteFont(List<byte> operators, PdfStyle style, bool required = false)
         {
             var familyName = style.Font;
             if (string.IsNullOrEmpty(familyName))
             {
-                return currentFont!;
+                return (currentFont!, false);
             }
 
             // Size is px, the to pt
@@ -182,23 +182,29 @@ namespace com.etsoo.EasyPdf
 
             // Avoid duplicate font operators
             var diffRef = currentFont?.RefName != font.RefName;
-            if (required || diffRef || currentFont?.Size != font.Size)
+            var diffSize = currentFont?.Size != font.Size;
+            if (required || diffRef || diffSize)
             {
                 operators.AddRange(PdfOperator.Tf(font.RefName, size));
             }
 
             var fontLineHeight = font.LineHeight;
             var lineHeight = style.GetLineHeight(fontLineHeight);
-            if (required || diffRef || lineHeight != currentLineHeight)
+            var diffHeight = currentLineHeight != lineHeight;
+            if (required || diffRef || diffHeight)
             {
                 operators.AddRange(PdfOperator.TL(lineHeight));
                 currentLineHeight = lineHeight;
             }
 
-            if (diffRef)
+            var diffFont = diffRef || diffSize || diffHeight;
+            if (diffFont)
             {
                 currentFont = font;
+            }
 
+            if (diffRef)
+            {
                 // Add to current page
                 if (currentPage != null && font.ObjRef != null)
                     currentPage.Resources.Font[font.RefName] = font.ObjRef.AsRef();
@@ -206,7 +212,7 @@ namespace com.etsoo.EasyPdf
 
             // Even if the font is the same, the style (bold / italic) may be different
             // So, return font instead of currentFont
-            return font;
+            return (font, diffFont);
         }
 
         /// <summary>
@@ -220,7 +226,7 @@ namespace com.etsoo.EasyPdf
         public async ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style, bool required = false)
         {
             var operators = new List<byte>();
-            var font = WriteFont(operators, style, required);
+            var (font, _) = WriteFont(operators, style, required);
             await stream.WriteAsync(operators.ToArray());
             return font;
         }

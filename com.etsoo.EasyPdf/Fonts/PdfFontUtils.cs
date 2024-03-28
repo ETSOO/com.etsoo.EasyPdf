@@ -78,7 +78,7 @@ namespace com.etsoo.EasyPdf.Fonts
 
             if (!setPoint)
             {
-                bytes.AddRange(Tm(1, 0, 0, 1, point.X, lineHeight));
+                bytes.AddRange(Tm(1, 0, 0, 1, point.X, point.Y + lineHeight));
             }
 
             return bytes;

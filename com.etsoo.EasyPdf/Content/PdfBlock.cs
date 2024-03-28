@@ -46,13 +46,12 @@ namespace com.etsoo.EasyPdf.Content
         /// 添加文本内容
         /// </summary>
         /// <param name="content">Content</param>
-        /// <param name="newline">Is new line</param>
-        public PdfChunk Add(ReadOnlySpan<char> content, bool newline = false)
+        public PdfTextChunk Add(ReadOnlySpan<char> content)
         {
             if (Rendered)
                 throw new InvalidOperationException("The block has been rendered.");
 
-            var chunk = new PdfChunk(content) { NewLine = newline };
+            var chunk = new PdfTextChunk(content);
             Add(chunk);
             return chunk;
         }

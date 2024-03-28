@@ -111,7 +111,7 @@ namespace com.etsoo.EasyPdf.Fonts
         /// </summary>
         /// <param name="chunk">Chunk</param>
         /// <returns>Result</returns>
-        public (char, float)[] Precalculate(PdfChunk chunk)
+        public (char, float)[] Precalculate(PdfTextChunk chunk)
         {
             // Truetype, Identity encoding
             // Step 1: char code (cid) => glyph index

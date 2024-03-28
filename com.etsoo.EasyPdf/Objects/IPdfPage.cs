@@ -64,6 +64,14 @@ namespace com.etsoo.EasyPdf.Objects
         Task EndTextAsync();
 
         /// <summary>
+        /// Move to the current point operator
+        /// 移动到当前点操作
+        /// </summary>
+        /// <param name="adjust">The adjustment</param>
+        /// <returns>Bytes</returns>
+        byte[] CurrentPointOperator(Vector2? adjust = null);
+
+        /// <summary>
         /// Move to the point
         /// 移动到点
         /// </summary>

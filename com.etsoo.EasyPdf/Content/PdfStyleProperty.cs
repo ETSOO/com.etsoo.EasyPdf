@@ -112,27 +112,6 @@
     }
 
     /// <summary>
-    /// PDF text style
-    /// PDf 文字样式
-    /// </summary>
-    public enum PdfTextStyle
-    {
-        Normal,
-
-        /// <summary>
-        /// Superscript
-        /// 上标
-        /// </summary>
-        SuperScript,
-
-        /// <summary>
-        /// Subscript
-        /// 下标
-        /// </summary>
-        SubScript
-    }
-
-    /// <summary>
     /// Border style
     /// https://developer.mozilla.org/en-US/docs/Web/CSS/border-style
     /// 边框样式

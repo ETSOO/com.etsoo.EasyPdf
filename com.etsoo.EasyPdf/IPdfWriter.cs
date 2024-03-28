@@ -58,8 +58,8 @@ namespace com.etsoo.EasyPdf
         /// <param name="operators">Operator bytes</param>
         /// <param name="style">Current style</param>
         /// <param name="required">Font reference is required</param>
-        /// <returns>Current font</returns>
-        IPdfFont WriteFont(List<byte> operators, PdfStyle style, bool required = false);
+        /// <returns>Current font and changed or not</returns>
+        (IPdfFont font, bool fontChanged) WriteFont(List<byte> operators, PdfStyle style, bool required = false);
 
         /// <summary>
         /// Write font

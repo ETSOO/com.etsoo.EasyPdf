@@ -69,7 +69,7 @@ namespace com.etsoo.EasyPdf.Fonts
         /// </summary>
         /// <param name="chunk">Chunk</param>
         /// <returns>Result</returns>
-        (char, float)[] Precalculate(PdfChunk chunk);
+        (char, float)[] Precalculate(PdfTextChunk chunk);
 
         /// <summary>
         /// Write chunk
