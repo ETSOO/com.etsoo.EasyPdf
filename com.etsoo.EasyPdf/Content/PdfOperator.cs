@@ -68,6 +68,12 @@ namespace com.etsoo.EasyPdf.Content
         public readonly static byte[] Tj = [PdfConstants.SpaceByte, 84, 106, PdfConstants.LineFeedByte];
 
         /// <summary>
+        /// Show a text string
+        /// " TJ\n"
+        /// </summary>
+        public readonly static byte[] TJ = [PdfConstants.SpaceByte, 84, 74, PdfConstants.LineFeedByte];
+
+        /// <summary>
         /// T* Move to the start of the next line
         /// "T*\n"
         /// </summary>

@@ -1,4 +1,5 @@
 ﻿using com.etsoo.EasyPdf.Fonts;
+using System.Numerics;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -13,6 +14,12 @@ namespace com.etsoo.EasyPdf.Content
         /// 字体
         /// </summary>
         public IPdfFont Font { get; }
+
+        /// <summary>
+        /// Blank character
+        /// 空白字符
+        /// </summary>
+        public char? BlankChar { get; set; }
 
         /// <summary>
         /// End operators
@@ -39,15 +46,31 @@ namespace com.etsoo.EasyPdf.Content
         public float Height { get; }
 
         /// <summary>
+        /// Start point
+        /// 开始点
+        /// </summary>
+        public Vector2? StartPoint { get; set; }
+
+        /// <summary>
+        /// Font style
+        /// 字体样式
+        /// </summary>
+        public PdfFontStyle FontStyle { get; }
+
+        /// <summary>
         /// Constructor
         /// 构造函数
         /// </summary>
         /// <param name="font">Font</param>
         /// <param name="height">Height</param>
-        public PdfBlockLineChunk(IPdfFont font, float height)
+        /// <param name="startPoint">Start point</param>
+        /// <param name="FontStyle">Font style</param>
+        public PdfBlockLineChunk(IPdfFont font, float height, Vector2? startPoint = null, PdfFontStyle fontStyle = PdfFontStyle.Regular)
         {
             Font = font;
             Height = height;
+            StartPoint = startPoint;
+            FontStyle = fontStyle;
         }
     }
 

@@ -12,6 +12,12 @@ namespace com.etsoo.EasyPdf
     public interface IPdfWriter : IAsyncDisposable
     {
         /// <summary>
+        /// Current page
+        /// 当前页面
+        /// </summary>
+        public IPdfPage? CurrentPage { get; }
+
+        /// <summary>
         /// Document
         /// 文档对象
         /// </summary>

@@ -30,10 +30,34 @@ namespace com.etsoo.EasyPdf.Content
         public PdfColor? BackgroundColor { get; set; }
 
         /// <summary>
+        /// Set background color
+        /// 设置背景颜色
+        /// </summary>
+        /// <param name="backgroundColor">Background color</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBackgroundColor(PdfColor? backgroundColor)
+        {
+            BackgroundColor = backgroundColor;
+            return this;
+        }
+
+        /// <summary>
         /// Border
         /// 边框
         /// </summary>
         public PdfStyleBorder? Border { get; set; }
+
+        /// <summary>
+        /// Set border
+        /// 设置边框
+        /// </summary>
+        /// <param name="border">Border</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBorder(PdfStyleBorder? border)
+        {
+            Border = border;
+            return this;
+        }
 
         /// <summary>
         /// Color
@@ -42,10 +66,34 @@ namespace com.etsoo.EasyPdf.Content
         public PdfColor? Color { get; set; }
 
         /// <summary>
+        /// Set color
+        /// 设置颜色
+        /// </summary>
+        /// <param name="color">Color</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetColor(PdfColor? color)
+        {
+            Color = color;
+            return this;
+        }
+
+        /// <summary>
         /// Font
         /// 字体
         /// </summary>
         public string? Font { get; set; }
+
+        /// <summary>
+        /// Set font
+        /// 设置字体
+        /// </summary>
+        /// <param name="font">Font</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetFont(string? font)
+        {
+            Font = font;
+            return this;
+        }
 
         /// <summary>
         /// Font size
@@ -54,10 +102,34 @@ namespace com.etsoo.EasyPdf.Content
         public float? FontSize { get; set; }
 
         /// <summary>
+        /// Set font size
+        /// 设置字体大小
+        /// </summary>
+        /// <param name="fontSize">Font size</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetFontSize(float? fontSize)
+        {
+            FontSize = fontSize;
+            return this;
+        }
+
+        /// <summary>
         /// Font style
         /// 字体样式
         /// </summary>
         public PdfFontStyle? FontStyle { get; set; }
+
+        /// <summary>
+        /// Set font style
+        /// 设置字体样式
+        /// </summary>
+        /// <param name="fontStyle">Font style</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetFontStyle(PdfFontStyle? fontStyle)
+        {
+            FontStyle = fontStyle;
+            return this;
+        }
 
         /// <summary>
         /// Height
@@ -66,10 +138,34 @@ namespace com.etsoo.EasyPdf.Content
         public float? Height { get; set; }
 
         /// <summary>
+        /// Set height
+        /// 设置高度
+        /// </summary>
+        /// <param name="height">Height</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetHeight(float? height)
+        {
+            Height = height;
+            return this;
+        }
+
+        /// <summary>
         /// Positioned element's left distance
         /// 定位元素的左边距离
         /// </summary>
         public float? Left { get; set; }
+
+        /// <summary>
+        /// Set left distance
+        /// 设置左边距离
+        /// </summary>
+        /// <param name="left">Left distance</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetLeft(float? left)
+        {
+            Left = left;
+            return this;
+        }
 
         /// <summary>
         /// Letter spacing
@@ -78,10 +174,34 @@ namespace com.etsoo.EasyPdf.Content
         public float? LetterSpacing { get; set; }
 
         /// <summary>
+        /// Set letter spacing
+        /// 设置字母间距
+        /// </summary>
+        /// <param name="letterSpacing">Letter spacing</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetLetterSpacing(float? letterSpacing)
+        {
+            LetterSpacing = letterSpacing;
+            return this;
+        }
+
+        /// <summary>
         /// Line height
         /// 行高
         /// </summary>
         public float? LineHeight { get; set; }
+
+        /// <summary>
+        /// Set line height
+        /// 设置行高
+        /// </summary>
+        /// <param name="lineHeight">Line height</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetLineHeight(float? lineHeight)
+        {
+            LineHeight = lineHeight;
+            return this;
+        }
 
         /// <summary>
         /// Margin
@@ -90,10 +210,34 @@ namespace com.etsoo.EasyPdf.Content
         public PdfStyleSpace? Margin { get; set; }
 
         /// <summary>
+        /// Set margin
+        /// 设置外延距离
+        /// </summary>
+        /// <param name="margin">Margin</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetMargin(PdfStyleSpace? margin)
+        {
+            Margin = margin;
+            return this;
+        }
+
+        /// <summary>
         /// Padding
         /// 填充距离
         /// </summary>
         public PdfStyleSpace? Padding { get; set; }
+
+        /// <summary>
+        /// Set padding
+        /// 设置填充距离
+        /// </summary>
+        /// <param name="padding">Padding</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetPadding(PdfStyleSpace? padding)
+        {
+            Padding = padding;
+            return this;
+        }
 
         /// <summary>
         /// Position
@@ -102,10 +246,34 @@ namespace com.etsoo.EasyPdf.Content
         public string? Position { get; set; }
 
         /// <summary>
+        /// Set position
+        /// 设置位置
+        /// </summary>
+        /// <param name="position">Position</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetPosition(string? position)
+        {
+            Position = position;
+            return this;
+        }
+
+        /// <summary>
         /// Text align
         /// 文本对齐
         /// </summary>
         public PdfTextAlign? TextAlign { get; set; }
+
+        /// <summary>
+        /// Set text align
+        /// 设置文本对齐
+        /// </summary>
+        /// <param name="textAlign">Text align</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetTextAlign(PdfTextAlign? textAlign)
+        {
+            TextAlign = textAlign;
+            return this;
+        }
 
         /// <summary>
         /// Text decoration
@@ -114,10 +282,34 @@ namespace com.etsoo.EasyPdf.Content
         public PdfTextDecoration? TextDecoration { get; set; }
 
         /// <summary>
+        /// Set text decoration
+        /// 设置文字修饰
+        /// </summary>
+        /// <param name="textDecoration">Text decoration</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetTextDecoration(PdfTextDecoration? textDecoration)
+        {
+            TextDecoration = textDecoration;
+            return this;
+        }
+
+        /// <summary>
         /// Positioned element's top distance
         /// 定位元素的顶端距离
         /// </summary>
         public float? Top { get; set; }
+
+        /// <summary>
+        /// Set top
+        /// 设置顶端距离
+        /// </summary>
+        /// <param name="top">Top</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetTop(float? top)
+        {
+            Top = top;
+            return this;
+        }
 
         /// <summary>
         /// Width
@@ -126,10 +318,34 @@ namespace com.etsoo.EasyPdf.Content
         public float? Width { get; set; }
 
         /// <summary>
+        /// Set width
+        /// 设置宽度
+        /// </summary>
+        /// <param name="width">Width</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetWidth(float? width)
+        {
+            Width = width;
+            return this;
+        }
+
+        /// <summary>
         /// Word spacing
         /// 字间距
         /// </summary>
         public float? WordSpacing { get; set; }
+
+        /// <summary>
+        /// Set word spacing
+        /// 设置字间距
+        /// </summary>
+        /// <param name="wordSpacing">Word spacing</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetWordSpacing(float? wordSpacing)
+        {
+            WordSpacing = wordSpacing;
+            return this;
+        }
 
         private T? CalculatePropertyValue<T>(Func<PdfStyle, T> propertySelector)
         {

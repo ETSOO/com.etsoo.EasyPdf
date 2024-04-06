@@ -20,7 +20,15 @@ namespace com.etsoo.EasyPdf
         private bool disposed = false;
 
         private ushort objIndex = 0;
+
         private PdfPage? currentPage;
+
+        /// <summary>
+        /// Current page
+        /// 当前页面
+        /// </summary>
+        public IPdfPage? CurrentPage => currentPage;
+
         private PdfObject? metadataObj;
         private IPdfFont? currentFont;
         private float? currentLineHeight;

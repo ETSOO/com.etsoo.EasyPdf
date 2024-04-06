@@ -1,5 +1,4 @@
 ﻿using com.etsoo.EasyPdf.Content;
-using System.Numerics;
 using static com.etsoo.EasyPdf.Content.PdfOperator;
 
 namespace com.etsoo.EasyPdf.Fonts
@@ -21,7 +20,7 @@ namespace com.etsoo.EasyPdf.Fonts
 
         public static float GetLineGap(float size)
         {
-            return size * 0.1f;
+            return size * 0.2f;
         }
 
         public static float GetBoldSize(float size)
@@ -34,7 +33,7 @@ namespace com.etsoo.EasyPdf.Fonts
             return size * ItalicAngle;
         }
 
-        public static List<byte> SetupStyle(this IPdfFont font, PdfStyle style, Vector2 point, out PdfFontStyle fontStyle)
+        public static List<byte> SetupStyle(this IPdfFont font, PdfStyle style, out PdfFontStyle fontStyle)
         {
             var bytes = new List<byte>();
 
@@ -46,9 +45,6 @@ namespace com.etsoo.EasyPdf.Fonts
 
             fontStyle = PdfFontStyle.Regular;
 
-            var lineHeight = style.GetLineHeight(font.LineHeight);
-
-            var setPoint = false;
             if (!font.IsMatch && font.Style != PdfFontStyle.Regular)
             {
                 var mode = TrMode.Fill;
@@ -68,17 +64,8 @@ namespace com.etsoo.EasyPdf.Fonts
                     // a, b [1, 0]
                     // c, d [0.21256, 1]
                     // e, f [0, 0]
-                    // Plus 1.3F is from testing
-                    bytes.AddRange(Tm(1, 0, ItalicAngle, 1, point.X + GetItalicSize(font.Size), lineHeight + 1.3F));
-                    setPoint = true;
-
                     fontStyle |= PdfFontStyle.Italic;
                 }
-            }
-
-            if (!setPoint)
-            {
-                bytes.AddRange(Tm(1, 0, 0, 1, point.X, point.Y + lineHeight));
             }
 
             return bytes;

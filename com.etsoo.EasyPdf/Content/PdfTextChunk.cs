@@ -42,11 +42,14 @@ namespace com.etsoo.EasyPdf.Content
             // Operators
             var operators = new List<byte>();
 
+            // Begin text
+            operators.AddRange(PdfOperator.BT);
+
             // Save graphics state
             operators.AddRange(PdfOperator.q);
 
             // Font
-            var (font, fontChanged) = writer.WriteFont(operators, style);
+            var (font, fontChanged) = writer.WriteFont(operators, style, true);
 
             // Line height
             var lineHeight = style.GetLineHeight(font.LineHeight);
@@ -58,8 +61,7 @@ namespace com.etsoo.EasyPdf.Content
             var wordSpacing = style.WordSpacing ?? 0;
 
             // Set styles
-            var pointY = fontChanged ? (rect.Y + lineHeight - point.Y) : 0;
-            var styleBytes = font.SetupStyle(style, new Vector2(point.X, pointY), out var fakeStyle);
+            var styleBytes = font.SetupStyle(style, out var fakeStyle);
             operators.AddRange(styleBytes);
 
             // Precalculate characters
@@ -68,26 +70,26 @@ namespace com.etsoo.EasyPdf.Content
             // New page
             var newPage = false;
 
-            var chunk = new PdfBlockLineChunk(font, lineHeight)
+            var chunk = new PdfBlockLineChunk(font, lineHeight, point.ToVector2(), fakeStyle)
             {
                 Operators = operators
             };
             line.Chunks.Add(chunk);
 
-            if (fakeStyle.HasFlag(PdfFontStyle.Bold))
-            {
-                // Two sides
-                var boldSize = 2 * PdfFontUtils.GetBoldSize(font.Size);
-                line.Width += boldSize;
-            }
+            //if (fakeStyle.HasFlag(PdfFontStyle.Bold))
+            //{
+            //    // Two sides
+            //    var boldSize = 2 * PdfFontUtils.GetBoldSize(font.Size);
+            //    line.Width += boldSize;
+            //}
 
-            if (fakeStyle.HasFlag(PdfFontStyle.Italic))
-            {
-                // One side
-                var italicSize = PdfFontUtils.GetItalicSize(font.Size);
-                point.X += italicSize;
-                line.Width += italicSize;
-            }
+            //if (fakeStyle.HasFlag(PdfFontStyle.Italic))
+            //{
+            //    // One side
+            //    var italicSize = PdfFontUtils.GetItalicSize(font.Size);
+            //    point.X += italicSize;
+            //    line.Width += italicSize;
+            //}
 
             var lastBlankIndex = 0;
 
@@ -106,6 +108,8 @@ namespace com.etsoo.EasyPdf.Content
                     }
 
                     lastBlankIndex = index;
+
+                    chunk.BlankChar = item;
                 }
 
                 if (point.X + width > rect.Width)
@@ -145,7 +149,7 @@ namespace com.etsoo.EasyPdf.Content
                             // Characters
                             var bcount = index - lastBlankIndex;
 
-                            // Deduct the width
+                            // Deduct the width, include the space
                             var bwidth = chars.Skip(lastBlankIndex).Take(bcount).Sum(item => item.width);
 
                             point.X -= bwidth;
@@ -156,36 +160,53 @@ namespace com.etsoo.EasyPdf.Content
 
                             // Next character after the space
                             index = lastBlankIndex + 1;
-
-                            // Replace the current character item
-                            item = chars[index].item;
-                            character = Content.Span[index];
                         }
+
+                        // Point.Y now is the current line's top
+                        // Add line height to the bottom
+                        point.Y += lineHeight;
 
                         // No more space to continue
                         if (point.Y + lineHeight - rect.Y > rect.Height)
                         {
+                            // Indicate the line is full width
+                            line.FullWidth = true;
+
                             newPage = true;
                             break;
                         }
 
+                        // Reset
+                        lastBlankIndex = 0;
+                        point.X = 0;
+
+                        // Distinguish the new line follwing same style or a new style line starts
+                        Vector2? startPoint = null;
+                        List<byte> newOperators = [];
+                        if (chunk.StartPoint?.X > 0)
+                        {
+                            // Complete the previous chunk
+                            CompleteChunk(chunk);
+
+                            startPoint = point.ToVector2();
+                            newOperators = operators;
+                        }
+
                         // New line
                         var newLine = new PdfBlockLine();
-                        chunk = new PdfBlockLineChunk(font, lineHeight);
+                        chunk = new PdfBlockLineChunk(font, lineHeight, startPoint)
+                        {
+                            Operators = newOperators
+                        };
                         newLine.Chunks.Add(chunk);
 
                         // Previous line action
                         line.FullWidth = true;
                         await newLineAction(line, newLine);
 
-                        // Reset
-                        lastBlankIndex = 0;
-                        point.X = 0;
-
-                        // Next line
-                        point.Y += lineHeight;
-
                         line = newLine;
+
+                        continue;
                     }
                 }
 
@@ -197,10 +218,19 @@ namespace com.etsoo.EasyPdf.Content
                 index++;
             } while (index < chars.Length);
 
+            // Complete the chunk
+            CompleteChunk(chunk);
+
+            return newPage;
+        }
+
+        private void CompleteChunk(PdfBlockLineChunk chunk)
+        {
             // Restore graphics state
             chunk.EndOperators.AddRange(PdfOperator.Q);
 
-            return newPage;
+            // End text
+            chunk.EndOperators.AddRange(PdfOperator.ET);
         }
     }
 }

@@ -1,5 +1,7 @@
-﻿using com.etsoo.EasyPdf.Objects;
+﻿using com.etsoo.EasyPdf.Fonts;
+using com.etsoo.EasyPdf.Objects;
 using System.Numerics;
+using System.Text;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -28,7 +30,6 @@ namespace com.etsoo.EasyPdf.Content
         public bool Rendered { get; private set; }
 
         private PdfBlockLine currentLine = new();
-        private bool firstLine = true;
 
         /// <summary>
         /// Add chunk
@@ -75,27 +76,21 @@ namespace com.etsoo.EasyPdf.Content
             // Rectangle
             var rect = style.GetRectangle(page.ContentRect.Size, page.CurrentPoint.ToVector2());
 
-            // Save graphics state
-            await page.SaveStateAsync();
-
-            // Begin text
-            await page.BeginTextAsync();
-
-            // Block level font
-            await writer.WriteFontAsync(page.Stream, style, true);
-
             var c = 0;
             for (; c < len; c++)
             {
                 var chunk = chunks[c];
-                if (await chunk.WriteAsync(writer, rect, page.CurrentPoint, currentLine, async (line, newLine) =>
+
+                var completed = await chunk.WriteAsync(writer, rect, page.CurrentPoint, currentLine, async (line, newLine) =>
                 {
                     // Output previous line
                     await WriteLineAsync(line, page, rect.Width);
 
                     // Update current line reference
                     currentLine = newLine;
-                }))
+                });
+
+                if (completed)
                 {
                     break;
                 }
@@ -107,13 +102,8 @@ namespace com.etsoo.EasyPdf.Content
 
                 // Move to the beginning of the next line
                 page.CurrentPoint.X = 0;
+                page.CurrentPoint.Y += currentLine.Height;
             }
-
-            // End text
-            await page.EndTextAsync();
-
-            // Restore graphics state
-            await page.RestoreStateAsync();
 
             Rendered = true;
 
@@ -137,21 +127,24 @@ namespace com.etsoo.EasyPdf.Content
 
         private async Task WriteLineAsync(PdfBlockLine line, IPdfPage page, float width)
         {
-            if (firstLine)
+            var chunkCount = line.Chunks.Count;
+            if (chunkCount == 0)
             {
-                // For block element, move to next line from previous point
-                await page.MoveToAsync(new Vector2(0, page.CurrentPoint.Y), line.Height);
-                firstLine = false;
+                return;
             }
+
+            float wordSpacing = 0;
 
             if (line.FullWidth && line.Width != width)
             {
-                if (line.Words < 0)
+                if (line.Words > 1)
                 {
                     // Adjust by word spacing
-                    var tw = (width - line.Width) / line.Words;
+                    // Only support single-byte encoded characters
+                    // For multi-byte encoded characters, no effect as the space character mapping may not be the same
+                    wordSpacing = (width - line.Width) / line.Words;
                     await page.Stream.WriteAsync(PdfOperator.Tc(0));
-                    await page.Stream.WriteAsync(PdfOperator.Tw(tw));
+                    await page.Stream.WriteAsync(PdfOperator.Tw(0));
                 }
                 else
                 {
@@ -167,17 +160,105 @@ namespace com.etsoo.EasyPdf.Content
                 await page.Stream.WriteAsync(PdfOperator.Tw(0));
             }
 
-            foreach (var chunk in line.Chunks)
+            var lineHeight = line.Height;
+            var firstHeight = line.Chunks[0].Height;
+
+            for (var c = 0; c < chunkCount; c++)
             {
+                var chunk = line.Chunks[c];
                 if (chunk.Operators.Count > 0)
                 {
                     await page.Stream.WriteAsync(chunk.Operators.ToArray());
                 }
 
-                if (chunk.Chars.Count > 0)
+                if (chunk.StartPoint.HasValue)
                 {
-                    await chunk.Font.WriteAsync(page.Stream, chunk.Chars);
-                    await page.Stream.WriteAsync(PdfOperator.SQ);
+                    var adjust = lineHeight - chunk.Height;
+                    var diff = chunk.Height - firstHeight;
+                    var isItalic = chunk.FontStyle.HasFlag(PdfFontStyle.Italic);
+
+                    var point = page.CalculatePoint(chunk.StartPoint.Value);
+                    var x = point.X;
+                    var y = point.Y - adjust + diff * 0.1f;
+                    if (isItalic)
+                    {
+                        x += PdfFontUtils.GetItalicSize(chunk.Font.Size) + diff * 0.08f;
+                    }
+
+                    var angle = isItalic ? PdfFontUtils.ItalicAngle : 0;
+                    var pointBytes = PdfOperator.Tm(1, 0, angle, 1, x, y, true);
+                    await page.Stream.WriteAsync(pointBytes);
+                }
+
+                var total = chunk.Chars.Count;
+                if (total > 0)
+                {
+                    if (wordSpacing == 0 || !chunk.BlankChar.HasValue)
+                    {
+                        await chunk.Font.WriteAsync(page.Stream, chunk.Chars);
+                        await page.Stream.WriteAsync(PdfOperator.SQ);
+                    }
+                    else
+                    {
+                        // New line
+                        await page.Stream.WriteAsync(PdfOperator.T42);
+
+                        // Array start
+                        page.Stream.WriteByte(PdfConstants.LeftSquareBracketByte);
+
+                        // Split by space char
+                        var lastPos = 0;
+                        var pos = chunk.Chars.IndexOf(chunk.BlankChar.Value, lastPos);
+                        var chunkWords = 0;
+                        while (pos != -1)
+                        {
+                            pos++;
+                            var chars = chunk.Chars.GetRange(lastPos, pos - lastPos);
+
+                            if (chunkWords > 0)
+                            {
+                                // Space char
+                                page.Stream.WriteByte(PdfConstants.SpaceByte);
+                            }
+
+                            await chunk.Font.WriteAsync(page.Stream, chars);
+
+                            // Space char
+                            page.Stream.WriteByte(PdfConstants.SpaceByte);
+
+                            // Kerning
+                            await page.Stream.WriteAsync(Encoding.UTF8.GetBytes($"-{wordSpacing * 72}"));
+
+                            chunkWords++;
+                            lastPos = pos;
+                            pos = chunk.Chars.IndexOf(chunk.BlankChar.Value, lastPos);
+                        }
+
+                        if (lastPos < total)
+                        {
+                            // Space char
+                            page.Stream.WriteByte(PdfConstants.SpaceByte);
+
+                            await chunk.Font.WriteAsync(page.Stream, chunk.Chars.GetRange(lastPos, total - lastPos));
+                        }
+
+                        // Adjust next sibling chunks
+                        for (var n = c + 1; n < chunkCount; n++)
+                        {
+                            var nextChunk = line.Chunks[n];
+                            if (nextChunk.StartPoint.HasValue)
+                            {
+                                var p = nextChunk.StartPoint.Value;
+                                nextChunk.StartPoint = new Vector2(p.X + chunkWords * wordSpacing, p.Y);
+                            }
+                        }
+
+                        // Array end
+                        page.Stream.WriteByte(PdfConstants.RightSquareBracketByte);
+
+                        // TJ for kerning
+                        await page.Stream.WriteAsync(PdfOperator.TJ);
+                    }
                 }
 
                 if (chunk.EndOperators.Count > 0)
