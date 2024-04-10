@@ -207,7 +207,7 @@ namespace com.etsoo.EasyPdf.Content
         /// Margin
         /// 外延距离
         /// </summary>
-        public PdfStyleSpace? Margin { get; set; }
+        public PdfStyleSpace Margin { get; set; } = new PdfStyleSpace(0);
 
         /// <summary>
         /// Set margin
@@ -215,7 +215,7 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="margin">Margin</param>
         /// <returns>Style</returns>
-        public PdfStyle SetMargin(PdfStyleSpace? margin)
+        public PdfStyle SetMargin(PdfStyleSpace margin)
         {
             Margin = margin;
             return this;
@@ -225,7 +225,7 @@ namespace com.etsoo.EasyPdf.Content
         /// Padding
         /// 填充距离
         /// </summary>
-        public PdfStyleSpace? Padding { get; set; }
+        public PdfStyleSpace Padding { get; set; } = new PdfStyleSpace(0);
 
         /// <summary>
         /// Set padding
@@ -233,7 +233,7 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="padding">Padding</param>
         /// <returns>Style</returns>
-        public PdfStyle SetPadding(PdfStyleSpace? padding)
+        public PdfStyle SetPadding(PdfStyleSpace padding)
         {
             Padding = padding;
             return this;

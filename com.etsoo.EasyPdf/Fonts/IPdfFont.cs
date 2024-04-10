@@ -64,6 +64,14 @@ namespace com.etsoo.EasyPdf.Fonts
         PdfSizeAndOffset Superscript { get; }
 
         /// <summary>
+        /// Local size to font unit
+        /// 本地大小转换为字体单位
+        /// </summary>
+        /// <param name="size">Local size</param>
+        /// <returns>Result</returns>
+        float LocalSizeToFUnit(float size);
+
+        /// <summary>
         /// Precalculate chunk
         /// 预计算内容块
         /// </summary>

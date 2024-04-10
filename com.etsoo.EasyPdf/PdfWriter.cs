@@ -30,7 +30,15 @@ namespace com.etsoo.EasyPdf
         public IPdfPage? CurrentPage => currentPage;
 
         private PdfObject? metadataObj;
+
         private IPdfFont? currentFont;
+
+        /// <summary>
+        /// Current font
+        /// 当前字体
+        /// </summary>
+        public IPdfFont? CurrentFont => currentFont;
+
         private float? currentLineHeight;
 
         /// <summary>
@@ -170,11 +178,27 @@ namespace com.etsoo.EasyPdf
         /// Write font
         /// 输出字体
         /// </summary>
+        /// <param name="font">Font</param>
+        /// <returns>Bytes</returns>
+        public byte[] WriteFont(IPdfFont font)
+        {
+            // Add to current page
+            if (currentPage != null && font.ObjRef != null && !currentPage.Resources.Font.ContainsKey(font.RefName))
+                currentPage.Resources.Font[font.RefName] = font.ObjRef.AsRef();
+
+            // Return bytes
+            return PdfOperator.Tf(font.RefName, font.Size);
+        }
+
+        /// <summary>
+        /// Write font
+        /// 输出字体
+        /// </summary>
         /// <param name="operators">Operator bytes</param>
         /// <param name="style">Current style</param>
         /// <param name="required">Font reference is required</param>
         /// <returns>Current font and changed or not</returns>
-        public (IPdfFont font, bool fontChanged) WriteFont(List<byte> operators, PdfStyle style, bool required = false)
+        public (IPdfFont font, bool fontChanged) WriteFont(List<byte[]> operators, PdfStyle style, bool required = false)
         {
             var familyName = style.Font;
             if (string.IsNullOrEmpty(familyName))
@@ -193,7 +217,7 @@ namespace com.etsoo.EasyPdf
             var diffSize = currentFont?.Size != font.Size;
             if (required || diffRef || diffSize)
             {
-                operators.AddRange(PdfOperator.Tf(font.RefName, size));
+                operators.Add(PdfOperator.Tf(font.RefName, size));
             }
 
             var fontLineHeight = font.LineHeight;
@@ -201,7 +225,7 @@ namespace com.etsoo.EasyPdf
             var diffHeight = currentLineHeight != lineHeight;
             if (required || diffRef || diffHeight)
             {
-                operators.AddRange(PdfOperator.TL(lineHeight));
+                operators.Add(PdfOperator.TL(lineHeight));
                 currentLineHeight = lineHeight;
             }
 
@@ -233,9 +257,14 @@ namespace com.etsoo.EasyPdf
         /// <returns>Current font</returns>
         public async ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style, bool required = false)
         {
-            var operators = new List<byte>();
+            var operators = new List<byte[]>();
             var (font, _) = WriteFont(operators, style, required);
-            await stream.WriteAsync(operators.ToArray());
+
+            foreach (var op in operators)
+            {
+                await stream.WriteAsync(op);
+            }
+
             return font;
         }
 

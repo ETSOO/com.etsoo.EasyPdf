@@ -277,7 +277,6 @@ namespace com.etsoo.EasyPdf.Fonts
         public float FUnitToLocal(int fUnit, float size)
         {
             return fUnit * size / 1000F;
-            //return fUnit * size / Head.unitsPerEm;
         }
 
         internal PdfCIDFontDic GetCIDFontType(PdfObject fontDescriptor, string fontName)

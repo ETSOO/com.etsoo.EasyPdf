@@ -74,6 +74,12 @@ namespace com.etsoo.EasyPdf.Content
         public readonly static byte[] TJ = [PdfConstants.SpaceByte, 84, 74, PdfConstants.LineFeedByte];
 
         /// <summary>
+        /// Text lending
+        /// " TL\n"
+        /// </summary>
+        public readonly static byte[] TLBytes = [PdfConstants.SpaceByte, 84, 76, PdfConstants.LineFeedByte];
+
+        /// <summary>
         /// T* Move to the start of the next line
         /// "T*\n"
         /// </summary>
@@ -170,9 +176,14 @@ namespace com.etsoo.EasyPdf.Content
         /// <returns>Bytes</returns>
         public static byte[] Td(Vector2 point)
         {
+            return Td(point.X, point.Y);
+        }
+
+        public static byte[] Td(float x, float y)
+        {
             return
             [
-                .. Encoding.ASCII.GetBytes($"{point.X} {point.Y}"),
+                .. Encoding.ASCII.GetBytes($"{x} {y}"),
                 .. " Td\n"u8
             ];
         }
@@ -200,7 +211,7 @@ namespace com.etsoo.EasyPdf.Content
             return
             [
                 .. Encoding.ASCII.GetBytes($"{leading}"),
-                .. " TL\n"u8
+                .. TLBytes
             ];
         }
 
@@ -218,9 +229,10 @@ namespace com.etsoo.EasyPdf.Content
         ///     which has the effect of rotating the coordinate system axes by an angle θ counterclockwise
         /// Skew is specified by [ 1 tan α tan β 1 0 0 ], which skews the x axis by an angle α and the y axis by an angle β
         /// cm manipulates the current transformation matrix (CTM), an element of the PDF graphics state, which defines the transformation from user space to device space
+        /// Tm will inherit the current transformation matrix within the BT and ET operators
         /// https://stackoverflow.com/questions/34900352/pdf-image-positioning
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Bytes</returns>
         public static byte[] Tm(float a, float b, float c, float d, float e, float f, bool cm = false)
         {
             // cm - Concatenate matrix to current transformation matrix

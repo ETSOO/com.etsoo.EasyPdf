@@ -94,6 +94,17 @@ namespace com.etsoo.EasyPdf.Fonts
         }
 
         /// <summary>
+        /// Local size to font unit
+        /// 本地大小转换为字体单位
+        /// </summary>
+        /// <param name="size">Local size</param>
+        /// <returns>Result</returns>
+        public float LocalSizeToFUnit(float size)
+        {
+            return 1000 * size / Size;
+        }
+
+        /// <summary>
         /// Write the font
         /// 输出字体
         /// </summary>

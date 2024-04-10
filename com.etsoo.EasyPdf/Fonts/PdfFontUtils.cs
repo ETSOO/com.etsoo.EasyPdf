@@ -30,17 +30,17 @@ namespace com.etsoo.EasyPdf.Fonts
 
         public static float GetItalicSize(float size)
         {
-            return size * ItalicAngle;
+            return Convert.ToSingle(size * Math.Tan(ItalicAngle));
         }
 
-        public static List<byte> SetupStyle(this IPdfFont font, PdfStyle style, out PdfFontStyle fontStyle)
+        public static List<byte[]> SetupStyle(this IPdfFont font, PdfStyle style, out PdfFontStyle fontStyle)
         {
-            var bytes = new List<byte>();
+            var bytes = new List<byte[]>();
 
             // Font color
             if (style.Color != null)
             {
-                bytes.AddRange(RG2(style.Color.Value));
+                bytes.Add(RG2(style.Color.Value));
             }
 
             fontStyle = PdfFontStyle.Regular;
@@ -51,13 +51,13 @@ namespace com.etsoo.EasyPdf.Fonts
 
                 if (font.Style.HasFlag(PdfFontStyle.Bold))
                 {
-                    bytes.AddRange(Zw(GetBoldSize(font.Size)));
+                    bytes.Add(Zw(GetBoldSize(font.Size)));
                     mode = TrMode.FillThenStroke;
 
                     fontStyle |= PdfFontStyle.Bold;
                 }
 
-                bytes.AddRange(Tr(mode));
+                bytes.Add(Tr(mode));
 
                 if (font.Style.HasFlag(PdfFontStyle.Italic))
                 {

@@ -1,9 +1,9 @@
 ﻿using com.etsoo.EasyPdf.Fonts;
+using com.etsoo.EasyPdf.Objects;
 using com.etsoo.EasyPdf.Support;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
-using System.Numerics;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -19,6 +19,12 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         public ReadOnlyMemory<char> Content { get; init; }
 
+        /// <summary>
+        /// Font
+        /// 字体
+        /// </summary>
+        public IPdfFont? Font { get; protected set; }
+
         private int index;
         private (char item, float width)[]? chars;
 
@@ -27,38 +33,111 @@ namespace com.etsoo.EasyPdf.Content
         /// 构造函数
         /// </summary>
         /// <param name="content">Content</param>
-        public PdfTextChunk(ReadOnlySpan<char> content)
+        /// <param name="type">Chunk type</param>
+        public PdfTextChunk(ReadOnlySpan<char> content, PdfChunkType type = PdfChunkType.Text) : base(type)
         {
             Memory<char> cache = new char[content.Length];
             content.CopyTo(cache.Span);
             Content = cache;
         }
 
+        public override Task CalculatePositionAsync(IPdfPage page, PdfBlockLine line, PdfBlockLineChunk chunk)
+        {
+            //var diff = chunk.Font.LineHeight - firstHeight;
+            var isItalic = chunk.FontStyle.HasFlag(PdfFontStyle.Italic);
+
+            var point = page.CalculatePoint(chunk.StartPoint);
+            var x = point.X;
+            var y = point.Y;
+            if (isItalic)
+            {
+                x += PdfFontUtils.GetItalicSize(chunk.Height) / 1.1f;
+            }
+
+            var angle = isItalic ? PdfFontUtils.ItalicAngle : 0;
+            var pointBytes = angle == 0 ? PdfOperator.Td(x, y) : PdfOperator.Tm(1, 0, angle, 1, x, y, false);
+            chunk.InsertAfter(pointBytes, PdfOperator.q);
+
+            // Lending
+            var lineHeight = line.Height;
+            if (chunk.Font.LineHeight < lineHeight)
+            {
+                var index = chunk.FindOperator(PdfOperator.TLBytes);
+                if (index != -1)
+                {
+                    chunk.Operators[index] = PdfOperator.TL(lineHeight);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Local operators setup
+        /// 本地操作设置
+        /// </summary>
+        /// <param name="operators">Operators</param>
+        /// <param name="writer">Writer</param>
+        protected virtual void SetupOperators(List<byte[]> operators, IPdfWriter writer)
+        {
+        }
+
+        /// <summary>
+        /// Write chunk
+        /// 输出块
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="rect">Rectangle to output</param>
+        /// <param name="point">Current point</param>
+        /// <param name="line">Current line</param>
+        /// <param name="newLineAction">New line action</param>
+        /// <returns>New page needed?</returns>
         public override async Task<bool> WriteAsync(IPdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine, Task> newLineAction)
         {
             // Computed style
             var style = Style.GetComputedStyle();
 
             // Operators
-            var operators = new List<byte>();
+            var operators = new List<byte[]>
+            {
+                // Begin text
+                PdfOperator.BT,
 
-            // Begin text
-            operators.AddRange(PdfOperator.BT);
+                // Save graphics state
+                PdfOperator.q
+            };
 
-            // Save graphics state
-            operators.AddRange(PdfOperator.q);
+            // Local setup
+            SetupOperators(operators, writer);
 
             // Font
-            var (font, fontChanged) = writer.WriteFont(operators, style, true);
+            var (font, _) = writer.WriteFont(operators, style, true);
 
             // Line height
-            var lineHeight = style.GetLineHeight(font.LineHeight);
+            float lineHeight;
+            if (Font == null)
+            {
+                Font = font;
+                lineHeight = style.GetLineHeight(font.LineHeight);
+            }
+            else
+            {
+                lineHeight = LineHeight ?? Font.LineHeight;
+            }
+
+            LineHeight ??= lineHeight;
 
             // Letter spacing
-            var letterSpacing = style.LetterSpacing ?? 0;
+            var letterSpacing = style.LetterSpacing.GetValueOrDefault().PxToPt();
 
             // Word spacing
-            var wordSpacing = style.WordSpacing ?? 0;
+            var wordSpacing = style.WordSpacing.GetValueOrDefault().PxToPt();
+
+            // Margin left
+            var marginLeft = (style.Margin?.Left ?? 0).PxToPt();
+
+            // Margin right
+            var marginRight = (style.Margin?.Right ?? 0).PxToPt();
 
             // Set styles
             var styleBytes = font.SetupStyle(style, out var fakeStyle);
@@ -70,26 +149,17 @@ namespace com.etsoo.EasyPdf.Content
             // New page
             var newPage = false;
 
-            var chunk = new PdfBlockLineChunk(font, lineHeight, point.ToVector2(), fakeStyle)
+            var chunk = new PdfBlockLineChunk(font, lineHeight, point.ToVector2(), false, fakeStyle)
             {
-                Operators = operators
+                Owner = this,
+                Operators = operators,
+                Style = style
             };
-            line.Chunks.Add(chunk);
+            line.AddChunk(chunk);
 
-            //if (fakeStyle.HasFlag(PdfFontStyle.Bold))
-            //{
-            //    // Two sides
-            //    var boldSize = 2 * PdfFontUtils.GetBoldSize(font.Size);
-            //    line.Width += boldSize;
-            //}
-
-            //if (fakeStyle.HasFlag(PdfFontStyle.Italic))
-            //{
-            //    // One side
-            //    var italicSize = PdfFontUtils.GetItalicSize(font.Size);
-            //    point.X += italicSize;
-            //    line.Width += italicSize;
-            //}
+            // Margin left
+            point.X += marginLeft;
+            line.Width += marginLeft;
 
             var lastBlankIndex = 0;
 
@@ -97,66 +167,73 @@ namespace com.etsoo.EasyPdf.Content
             {
                 var (item, width) = chars[index];
 
+                var widthWithSpacing = width + letterSpacing;
+
                 var character = Content.Span[index];
 
                 if (character == ' ')
                 {
                     // ASCII blank
-                    if (lastBlankIndex != -1 && lastBlankIndex + 1 < index)
+                    if (lastBlankIndex != -1)
                     {
-                        line.Words++;
+                        line.Spaces++;
+
+                        line.Width += wordSpacing;
+                        point.X += wordSpacing;
                     }
 
                     lastBlankIndex = index;
 
+                    // Defferent chunk may have different font, so the blank character may be different
                     chunk.BlankChar = item;
                 }
 
                 if (point.X + width > rect.Width)
                 {
                     var category = CharUnicodeInfo.GetUnicodeCategory(character);
-                    if (category == UnicodeCategory.SpaceSeparator)
-                    {
-                        if (chunk.Chars.Count == index)
-                        {
-                            // Remove possible previous space
-                            var prev = Content.Span[index - 1];
-                            if (CharUnicodeInfo.GetUnicodeCategory(prev) == UnicodeCategory.SpaceSeparator)
-                            {
-                                chunk.Chars.RemoveAt(index - 1);
-                                point.X -= width;
-                                line.Width -= width;
-                            }
-                        }
-
-                        // Reset the flag, no necessary to handle later
-                        lastBlankIndex = -1;
-
-                        // Skip the space
-                        index++;
-                        continue;
-                    }
-                    else if (category == UnicodeCategory.ClosePunctuation || category == UnicodeCategory.OtherPunctuation)
+                    if (category == UnicodeCategory.ClosePunctuation || category == UnicodeCategory.OtherPunctuation)
                     {
                         // Put the punctuation to the end instead of the start of the next line
                         Debug.WriteLine($"Punctuation char {character} at {point.X}");
                     }
                     else
                     {
+                        if (category == UnicodeCategory.SpaceSeparator)
+                        {
+                            // Remove the last space
+                            line.Spaces--;
+
+                            line.Width -= wordSpacing;
+                            point.X -= wordSpacing;
+
+                            // Reset the flag, no necessary to handle later
+                            lastBlankIndex = -1;
+
+                            // Skip the space
+                            index++;
+                        }
+
                         // English words
-                        if (line.Words > 1 && lastBlankIndex > 0)
+                        if (line.Spaces > 0 && lastBlankIndex > 0)
                         {
                             // Characters
                             var bcount = index - lastBlankIndex;
 
                             // Deduct the width, include the space
-                            var bwidth = chars.Skip(lastBlankIndex).Take(bcount).Sum(item => item.width);
+                            var start = chunk.Widths.Count - bcount;
+                            var bwidth = chunk.Widths.Skip(start).Take(bcount).Sum();
 
                             point.X -= bwidth;
                             line.Width -= bwidth;
 
-                            var start = chunk.Chars.Count - bcount;
                             chunk.Chars.RemoveRange(start, bcount);
+                            chunk.Widths.RemoveRange(start, bcount);
+
+                            // Remove the last space
+                            line.Spaces--;
+
+                            line.Width -= wordSpacing;
+                            point.X -= wordSpacing;
 
                             // Next character after the space
                             index = lastBlankIndex + 1;
@@ -181,24 +258,26 @@ namespace com.etsoo.EasyPdf.Content
                         point.X = 0;
 
                         // Distinguish the new line follwing same style or a new style line starts
-                        Vector2? startPoint = null;
-                        List<byte> newOperators = [];
-                        if (chunk.StartPoint?.X > 0)
+                        List<byte[]> newOperators = [];
+                        var isSequence = true;
+                        if (chunk.StartPoint.X > 0)
                         {
                             // Complete the previous chunk
                             CompleteChunk(chunk);
 
-                            startPoint = point.ToVector2();
+                            isSequence = false;
                             newOperators = operators;
                         }
 
                         // New line
                         var newLine = new PdfBlockLine();
-                        chunk = new PdfBlockLineChunk(font, lineHeight, startPoint)
+                        chunk = new PdfBlockLineChunk(font, lineHeight, point.ToVector2(), isSequence)
                         {
-                            Operators = newOperators
+                            Owner = this,
+                            Operators = newOperators,
+                            Style = style
                         };
-                        newLine.Chunks.Add(chunk);
+                        newLine.AddChunk(chunk);
 
                         // Previous line action
                         line.FullWidth = true;
@@ -211,12 +290,17 @@ namespace com.etsoo.EasyPdf.Content
                 }
 
                 chunk.Chars.Add(item);
+                chunk.Widths.Add(width);
 
-                point.X += width;
-                line.Width += width;
+                point.X += widthWithSpacing;
+                line.Width += widthWithSpacing;
 
                 index++;
             } while (index < chars.Length);
+
+            // Margin right
+            point.X += marginRight;
+            line.Width += marginRight;
 
             // Complete the chunk
             CompleteChunk(chunk);
@@ -227,10 +311,8 @@ namespace com.etsoo.EasyPdf.Content
         private void CompleteChunk(PdfBlockLineChunk chunk)
         {
             // Restore graphics state
-            chunk.EndOperators.AddRange(PdfOperator.Q);
-
             // End text
-            chunk.EndOperators.AddRange(PdfOperator.ET);
+            chunk.EndOperators.AddRange([PdfOperator.Q, PdfOperator.ET]);
         }
     }
 }

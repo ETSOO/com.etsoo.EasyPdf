@@ -24,6 +24,12 @@ namespace com.etsoo.EasyPdf
         IPdfDocument Document { get; }
 
         /// <summary>
+        /// Current font
+        /// 当前字体
+        /// </summary>
+        IPdfFont? CurrentFont { get; }
+
+        /// <summary>
         /// Create font
         /// 创建字体
         /// </summary>
@@ -61,11 +67,19 @@ namespace com.etsoo.EasyPdf
         /// Write font
         /// 输出字体
         /// </summary>
+        /// <param name="font">Font</param>
+        /// <returns>Bytes</returns>
+        byte[] WriteFont(IPdfFont font);
+
+        /// <summary>
+        /// Write font
+        /// 输出字体
+        /// </summary>
         /// <param name="operators">Operator bytes</param>
         /// <param name="style">Current style</param>
         /// <param name="required">Font reference is required</param>
         /// <returns>Current font and changed or not</returns>
-        (IPdfFont font, bool fontChanged) WriteFont(List<byte> operators, PdfStyle style, bool required = false);
+        (IPdfFont font, bool fontChanged) WriteFont(List<byte[]> operators, PdfStyle style, bool required = false);
 
         /// <summary>
         /// Write font

@@ -207,7 +207,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// <returns>Bytes</returns>
         protected byte[] MovingOperator(Vector2 globalPoint, bool cm = true)
         {
-            return PdfOperator.Tm(1, 0, 0, 1, globalPoint.X, globalPoint.Y, cm);
+            return cm ? PdfOperator.Tm(1, 0, 0, 1, globalPoint.X, globalPoint.Y, cm) : PdfOperator.Td(globalPoint);
         }
 
         /// <summary>
