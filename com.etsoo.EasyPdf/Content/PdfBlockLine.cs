@@ -169,14 +169,48 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="bytes">Bytes to insert</param>
         /// <param name="endBytes">Position ended with the bytes</param>
+        /// <param name="avoidDupliate">Avoid duplicate item</param>
         /// <returns>Inserted index</returns>
-        public int InsertAfter(byte[] bytes, byte[] endBytes)
+        public int InsertAfter(byte[] bytes, byte[] endBytes, bool avoidDupliate = true)
         {
             var pos = FindBytes(Operators, endBytes);
 
             if (pos != -1)
             {
-                Operators.Insert(pos, bytes);
+                pos++;
+
+                if (pos == Operators.Count)
+                {
+                    Operators.Add(bytes);
+                }
+                else
+                {
+                    if (avoidDupliate)
+                    {
+                        var next = Operators[pos];
+                        var len = Math.Min(next.Length, bytes.Length);
+
+                        for (var i = 1; i <= len; i++)
+                        {
+                            if (next[^i] != bytes[^i])
+                            {
+                                if (i > 4)
+                                {
+                                    // Replace
+                                    Operators[pos] = bytes;
+
+                                    return pos;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    Operators.Insert(pos, bytes);
+                }
             }
 
             return pos;

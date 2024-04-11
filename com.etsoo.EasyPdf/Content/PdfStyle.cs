@@ -24,6 +24,12 @@ namespace com.etsoo.EasyPdf.Content
         public PdfStyle? Parent { get; set; } = parent;
 
         /// <summary>
+        /// Auto inherit
+        /// 自动继承
+        /// </summary>
+        public bool Inherit { get; set; } = true;
+
+        /// <summary>
         /// Background color
         /// 背景颜色
         /// </summary>
@@ -347,9 +353,15 @@ namespace com.etsoo.EasyPdf.Content
             return this;
         }
 
-        private T? CalculatePropertyValue<T>(Func<PdfStyle, T> propertySelector)
+        private T? CalculatePropertyValue<T>(Func<PdfStyle, T> propertySelector, bool inherit)
         {
             PdfStyle? currentStyle = this;
+
+            if (!inherit)
+            {
+                return propertySelector(currentStyle);
+            }
+
             while (currentStyle != null)
             {
                 var value = propertySelector(currentStyle);
@@ -359,6 +371,7 @@ namespace com.etsoo.EasyPdf.Content
                 }
                 currentStyle = currentStyle.Parent;
             }
+
             return default;
         }
 
@@ -367,15 +380,16 @@ namespace com.etsoo.EasyPdf.Content
             return new PdfStyle()
             {
                 // Inherit
-                Color = CalculatePropertyValue((style) => style.Color),
-                Font = CalculatePropertyValue((style) => style.Font),
-                FontSize = CalculatePropertyValue((style) => style.FontSize),
-                FontStyle = CalculatePropertyValue((style) => style.FontStyle),
-                LetterSpacing = CalculatePropertyValue((style) => style.LetterSpacing),
-                LineHeight = CalculatePropertyValue((style) => style.LineHeight),
-                TextAlign = CalculatePropertyValue((style) => style.TextAlign),
-                TextDecoration = CalculatePropertyValue((style) => style.TextDecoration),
-                WordSpacing = CalculatePropertyValue((style) => style.WordSpacing),
+                Color = CalculatePropertyValue((style) => style.Color, true),
+                Font = CalculatePropertyValue((style) => style.Font, true),
+                FontStyle = CalculatePropertyValue((style) => style.FontStyle, true),
+
+                FontSize = CalculatePropertyValue((style) => style.FontSize, Inherit),
+                LetterSpacing = CalculatePropertyValue((style) => style.LetterSpacing, Inherit),
+                LineHeight = CalculatePropertyValue((style) => style.LineHeight, Inherit),
+                TextAlign = CalculatePropertyValue((style) => style.TextAlign, Inherit),
+                TextDecoration = CalculatePropertyValue((style) => style.TextDecoration, Inherit),
+                WordSpacing = CalculatePropertyValue((style) => style.WordSpacing, Inherit),
 
                 // Not inherit
                 BackgroundColor = BackgroundColor,

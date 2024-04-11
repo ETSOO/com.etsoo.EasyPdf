@@ -1,5 +1,6 @@
 ﻿
 using com.etsoo.EasyPdf.Fonts;
+using com.etsoo.EasyPdf.Objects;
 using com.etsoo.EasyPdf.Support;
 using System.Drawing;
 
@@ -25,21 +26,28 @@ namespace com.etsoo.EasyPdf.Content
 
     public abstract class PdfScript : PdfTextChunk
     {
-        private float offset = 0.5f;
+        private float offset;
 
         public PdfScript(ReadOnlySpan<char> content, bool sub)
             : base(content, sub ? PdfChunkType.Subscript : PdfChunkType.Superscript)
         {
+            Style.Inherit = false;
         }
 
-        protected override void SetupOperators(List<byte[]> operators, IPdfWriter writer)
+        public override Task CalculatePositionAsync(IPdfPage page, PdfBlockLine line, PdfBlockLineChunk chunk)
         {
-            if (Font != null)
+            var size = Font!.Size;
+            var chunkSize = chunk.Font.Size;
+            if (Type == PdfChunkType.Superscript)
             {
-                operators.Add(writer.WriteFont(Font));
+                chunk.StartPoint.Y += line.Height + 1 - size - offset / 2;
+            }
+            else
+            {
+                chunk.StartPoint.Y += line.Height - chunkSize - offset;
             }
 
-            operators.Add(PdfOperator.Ts(offset));
+            return base.CalculatePositionAsync(page, line, chunk);
         }
 
         private (IPdfFont, float?) GetNearestNormalFont(IPdfWriter writer)
@@ -81,7 +89,34 @@ namespace com.etsoo.EasyPdf.Content
                 Style.FontSize = size;
             }
 
-            return await base.WriteAsync(writer, rect, point, line, newLineAction);
+            if (PreviousSibling is PdfScript ps && ps.Type != Type)
+            {
+                var startPoint = ps.StartPoint;
+                var endPoint = ps.EndPoint;
+
+                point.X = startPoint.X;
+                point.Y = startPoint.Y;
+
+                var newPage = await base.WriteAsync(writer, rect, point, line, newLineAction);
+
+                var newEndPoint = EndPoint;
+                if (newEndPoint.Y > endPoint.Y || (newEndPoint.Y == endPoint.Y && newEndPoint.X > endPoint.X))
+                {
+                    point.X = newEndPoint.X;
+                    point.Y = newEndPoint.Y;
+                }
+                else
+                {
+                    point.X = endPoint.X;
+                    point.Y = endPoint.Y;
+                }
+
+                return newPage;
+            }
+            else
+            {
+                return await base.WriteAsync(writer, rect, point, line, newLineAction);
+            }
         }
     }
 }

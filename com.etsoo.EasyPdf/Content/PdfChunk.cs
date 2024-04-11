@@ -1,6 +1,7 @@
 ﻿using com.etsoo.EasyPdf.Objects;
 using com.etsoo.EasyPdf.Support;
 using System.Drawing;
+using System.Numerics;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -38,6 +39,18 @@ namespace com.etsoo.EasyPdf.Content
         /// 上一个兄弟块
         /// </summary>
         internal PdfChunk? PreviousSibling { get; set; }
+
+        /// <summary>
+        /// End point
+        /// 结束点
+        /// </summary>
+        public Vector2 EndPoint { get; protected set; }
+
+        /// <summary>
+        /// Start point
+        /// 开始点
+        /// </summary>
+        public Vector2 StartPoint { get; protected set; }
 
         /// <summary>
         /// Style

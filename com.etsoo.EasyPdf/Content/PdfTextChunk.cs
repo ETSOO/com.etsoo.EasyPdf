@@ -43,10 +43,10 @@ namespace com.etsoo.EasyPdf.Content
 
         public override Task CalculatePositionAsync(IPdfPage page, PdfBlockLine line, PdfBlockLineChunk chunk)
         {
-            //var diff = chunk.Font.LineHeight - firstHeight;
             var isItalic = chunk.FontStyle.HasFlag(PdfFontStyle.Italic);
 
             var point = page.CalculatePoint(chunk.StartPoint);
+
             var x = point.X;
             var y = point.Y;
             if (isItalic)
@@ -54,18 +54,22 @@ namespace com.etsoo.EasyPdf.Content
                 x += PdfFontUtils.GetItalicSize(chunk.Height) / 1.1f;
             }
 
+            // Text destination
             var angle = isItalic ? PdfFontUtils.ItalicAngle : 0;
             var pointBytes = angle == 0 ? PdfOperator.Td(x, y) : PdfOperator.Tm(1, 0, angle, 1, x, y, false);
             chunk.InsertAfter(pointBytes, PdfOperator.q);
 
             // Lending
-            var lineHeight = line.Height;
-            if (chunk.Font.LineHeight < lineHeight)
+            if (Type == PdfChunkType.Text)
             {
-                var index = chunk.FindOperator(PdfOperator.TLBytes);
-                if (index != -1)
+                var lineHeight = line.Height;
+                if (chunk.Font.LineHeight < lineHeight)
                 {
-                    chunk.Operators[index] = PdfOperator.TL(lineHeight);
+                    var index = chunk.FindOperator(PdfOperator.TLBytes);
+                    if (index != -1)
+                    {
+                        chunk.Operators[index] = PdfOperator.TL(lineHeight);
+                    }
                 }
             }
 
@@ -149,7 +153,9 @@ namespace com.etsoo.EasyPdf.Content
             // New page
             var newPage = false;
 
-            var chunk = new PdfBlockLineChunk(font, lineHeight, point.ToVector2(), false, fakeStyle)
+            // Start point
+            StartPoint = point.ToVector2();
+            var chunk = new PdfBlockLineChunk(font, lineHeight, StartPoint, false, fakeStyle)
             {
                 Owner = this,
                 Operators = operators,
@@ -304,6 +310,9 @@ namespace com.etsoo.EasyPdf.Content
 
             // Complete the chunk
             CompleteChunk(chunk);
+
+            // End point
+            EndPoint = point.ToVector2();
 
             return newPage;
         }
