@@ -22,7 +22,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// The annotation rectangle, defining the location of the annotation on the page in default user space units
         /// 注释矩形，定义注释在页面上的位置，以默认用户空间单位表示
         /// </summary>
-        public Rectangle Rect { get; set; }
+        public RectangleF Rect { get; set; }
 
         /// <summary>
         /// Text that shall be displayed for the annotation or, if this type of annotation does not display text, an alternate description of the annotation’s contents in human-readable form
@@ -90,7 +90,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// </summary>
         public PdfDictionary? OC { get; set; }
 
-        public PdfAnnotation(string subtype, Rectangle rect) : base()
+        public PdfAnnotation(string subtype, RectangleF rect) : base()
         {
             Subtype = subtype;
             Rect = rect;
@@ -100,9 +100,9 @@ namespace com.etsoo.EasyPdf.Objects
         {
             base.AddItems();
 
-            Dic.AddNameStr(nameof(Subtype), Subtype);
+            Dic.AddNames(nameof(Subtype), Subtype);
             Dic.AddNameRect(nameof(Rect), Rect);
-            Dic.AddNameStr(nameof(Contents), Contents);
+            Dic.AddNameBinary(nameof(Contents), Contents);
             Dic.AddNameStr(nameof(NM), NM);
             Dic.AddNameItem(nameof(M), M);
             Dic.AddNameInt(nameof(F), F);

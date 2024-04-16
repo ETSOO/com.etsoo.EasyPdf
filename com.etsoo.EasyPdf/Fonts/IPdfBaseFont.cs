@@ -74,6 +74,6 @@ namespace com.etsoo.EasyPdf.Fonts
         /// <param name="objRef">Font obj reference</param>
         /// <param name="style">Font style</param>
         /// <returns>Task</returns>
-        Task WriteAsync(IPdfWriter writer, PdfObject objRef, PdfFontStyle? style);
+        Task WriteAsync(PdfWriter writer, PdfObject objRef, PdfFontStyle? style);
     }
 }

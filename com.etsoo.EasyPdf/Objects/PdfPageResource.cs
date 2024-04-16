@@ -23,22 +23,29 @@ namespace com.etsoo.EasyPdf.Objects
     {
         public List<PdfPageResourceProcedure> ProcSet { get; } = [PdfPageResourceProcedure.PDF];
 
-        public Dictionary<string, PdfObject> XObject { get; } = [];
+        public Dictionary<string, PdfObject> ExtGState { get; } = [];
 
         public Dictionary<string, PdfObject> Font { get; } = [];
 
+        public Dictionary<string, PdfObject> XObject { get; } = [];
+
         public override Task WriteToAsync(Stream stream)
         {
-            if (XObject.Count != 0)
+            if (ExtGState.Count != 0)
             {
-                AddNameDic(nameof(XObject), XObject);
-                ProcSet.AddRange([PdfPageResourceProcedure.ImageB, PdfPageResourceProcedure.ImageC, PdfPageResourceProcedure.ImageI]);
+                AddNameDic(nameof(ExtGState), ExtGState);
             }
 
             if (Font.Count != 0)
             {
                 ProcSet.Add(PdfPageResourceProcedure.Text);
                 AddNameDic(nameof(Font), Font);
+            }
+
+            if (XObject.Count != 0)
+            {
+                ProcSet.AddRange([PdfPageResourceProcedure.ImageB, PdfPageResourceProcedure.ImageC, PdfPageResourceProcedure.ImageI]);
+                AddNameDic(nameof(XObject), XObject);
             }
 
             AddNameArray(nameof(ProcSet), ProcSet.Select(p => new PdfName(p.ToString())));

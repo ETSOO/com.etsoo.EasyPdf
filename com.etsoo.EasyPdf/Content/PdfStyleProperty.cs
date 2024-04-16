@@ -49,6 +49,22 @@
         /// 厚度
         /// </summary>
         public ushort Thickness { get; set; }
+
+        /// <summary>
+        /// Constructor
+        /// 构造函数
+        /// </summary>
+        /// <param name="kind">Kind</param>
+        /// <param name="color">Color</param>
+        /// <param name="style">Line style</param>
+        /// <param name="thickness">Thickness</param>
+        public PdfTextDecoration(PdfLineKind kind, PdfColor color, PdfLineStyle style = PdfLineStyle.Solid, ushort thickness = 1)
+        {
+            Kind = kind;
+            Style = style;
+            Color = color;
+            Thickness = thickness;
+        }
     }
 
     /// <summary>

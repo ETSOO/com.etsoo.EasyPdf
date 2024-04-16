@@ -30,7 +30,7 @@ namespace com.etsoo.EasyPdf.Fonts
 
         public static float GetItalicSize(float size)
         {
-            return Convert.ToSingle(size * Math.Tan(ItalicAngle));
+            return (size * Math.Tan(ItalicAngle)).ToSingle();
         }
 
         public static List<byte[]> SetupStyle(this IPdfFont font, PdfStyle style, out PdfFontStyle fontStyle)

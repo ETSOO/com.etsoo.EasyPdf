@@ -49,6 +49,12 @@ namespace com.etsoo.EasyPdf.Objects
         public DateTime? LastModified { get; set; }
 
         /// <summary>
+        /// Annotation dictionary array
+        /// 注释字典数组
+        /// </summary>
+        public List<PdfObject> Annots { get; } = [];
+
+        /// <summary>
         /// Content stream
         /// 内容流
         /// </summary>
@@ -102,7 +108,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// <param name="parent">Parent page tree</param>
         /// <param name="pageData">Page data</param>
         /// <param name="style">Parent style</param>
-        public PdfPage(PdfObject obj, PdfPageTree parent, PdfPageData pageData, PdfStyle style) : base(obj)
+        internal PdfPage(PdfObject obj, PdfPageTree parent, PdfPageData pageData, PdfStyle style) : base(obj)
         {
             Parent = parent;
             ParentObj = parent.Obj.AsRef();
@@ -126,6 +132,7 @@ namespace com.etsoo.EasyPdf.Objects
 
             Dic.AddNameInt(nameof(Data.Rotate), Data.Rotate);
             // Dic.AddNameNum("UserUnit", 1.0);
+            Dic.AddNameArray(nameof(Annots), Annots);
             Dic.AddNameItem(nameof(Contents), Contents);
             Dic.AddNameItem(nameof(Resources), Resources);
             Dic.AddNameDate(nameof(LastModified), LastModified);
@@ -154,6 +161,16 @@ namespace com.etsoo.EasyPdf.Objects
                 X = point.X + contentRect.X,
                 Y = contentRect.Height + contentRect.Y - point.Y
             };
+        }
+
+        /// <summary>
+        /// Calculate current point
+        /// 计算当前点
+        /// </summary>
+        /// <returns>Result</returns>
+        public Vector2 CalculatePoint()
+        {
+            return CalculatePoint(CurrentPoint.ToVector2());
         }
 
         /// <summary>
@@ -245,7 +262,7 @@ namespace com.etsoo.EasyPdf.Objects
             return globalPoint;
         }
 
-        public async Task PrepareAsync(IPdfWriter writer)
+        public async Task PrepareAsync(PdfWriter writer)
         {
             // Page style
             var style = Style.GetComputedStyle();
@@ -318,7 +335,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// <param name="block">Block element</param>
         /// <param name="writer">Writer</param>
         /// <returns>Task</returns>
-        public async Task WriteAsync(PdfBlock block, IPdfWriter writer)
+        public async Task WriteAsync(PdfBlock block, PdfWriter writer)
         {
             block.Style.Parent = Style;
             await block.WriteAsync(this, writer);
@@ -417,7 +434,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// </summary>
         /// <param name="writer">Writer</param>
         /// <returns>Task</returns>
-        public async Task WriteEndAsync(IPdfWriter writer)
+        public async Task WriteEndAsync(PdfWriter writer)
         {
             // Finish writing
             await using (Stream)

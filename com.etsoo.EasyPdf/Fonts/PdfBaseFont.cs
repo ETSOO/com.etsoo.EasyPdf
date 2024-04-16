@@ -764,10 +764,7 @@ namespace com.etsoo.EasyPdf.Fonts
             //aw.Position = 0;
 
             // Return stream dictionary
-            return new PdfFontStream(await aw.ToBytesAsync())
-            {
-                Lengths = [(int)aw.Length]
-            };
+            return new PdfFontStream(await aw.ToBytesAsync());
         }
 
         /// <summary>
@@ -778,7 +775,7 @@ namespace com.etsoo.EasyPdf.Fonts
         /// <param name="fontObj">Font obj reference</param>
         /// <param name="style">Font style</param>
         /// <returns>Task</returns>
-        public async Task WriteAsync(IPdfWriter writer, PdfObject fontObj, PdfFontStyle? style)
+        public async Task WriteAsync(PdfWriter writer, PdfObject fontObj, PdfFontStyle? style)
         {
             // Font name
             var fontName = Cff == null ? Names.FirstOrDefault(n => n.NameId == FontNameId.PostScriptCID)?.Name : null;

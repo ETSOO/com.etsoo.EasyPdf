@@ -50,7 +50,7 @@ namespace com.etsoo.EasyPdf.Content
             return base.CalculatePositionAsync(page, line, chunk);
         }
 
-        private (IPdfFont, float?) GetNearestNormalFont(IPdfWriter writer)
+        private (IPdfFont, float?) GetNearestNormalFont(PdfWriter writer)
         {
             var chunk = PreviousSibling;
             while (chunk != null)
@@ -73,7 +73,7 @@ namespace com.etsoo.EasyPdf.Content
             return (font, style?.GetLineHeight(font.LineHeight));
         }
 
-        public override async Task<bool> WriteAsync(IPdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine, Task> newLineAction)
+        public override async Task<bool> WriteAsync(PdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction)
         {
             var (font, lineHeight) = GetNearestNormalFont(writer);
             var (size, offset) = Type == PdfChunkType.Subscript ? font.Subscript : font.Superscript;

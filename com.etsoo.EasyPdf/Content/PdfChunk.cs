@@ -11,9 +11,12 @@ namespace com.etsoo.EasyPdf.Content
     /// </summary>
     public enum PdfChunkType
     {
-        Text,
+        HR,
+        Link,
+        Image,
+        Subscript,
         Superscript,
-        Subscript
+        Text
     }
 
     /// <summary>
@@ -27,6 +30,12 @@ namespace com.etsoo.EasyPdf.Content
         /// 行高
         /// </summary>
         public float? LineHeight { get; set; }
+
+        /// <summary>
+        /// Owner
+        /// 所有者
+        /// </summary>
+        internal PdfBlock? Owner { get; set; }
 
         /// <summary>
         /// Next sibling chunk
@@ -84,7 +93,7 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="line">Current line</param>
         /// <param name="newLineAction">New line action</param>
         /// <returns>Need new page or not</returns>
-        public abstract Task<bool> WriteAsync(IPdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine, Task> newLineAction);
+        public abstract Task<bool> WriteAsync(PdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction);
 
         /// <summary>
         /// Calculate position
@@ -99,6 +108,22 @@ namespace com.etsoo.EasyPdf.Content
             var point = page.CalculatePoint(chunk.StartPoint);
             var pointBytes = PdfOperator.Td(point);
             chunk.InsertAfter(pointBytes, PdfOperator.q);
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// New line action
+        /// 新行动作
+        /// </summary>
+        /// <param name="line">Current line</param>
+        /// <param name="chunkIndex">Chunk start index</param>
+        /// <param name="page">Current page</param>
+        /// <param name="writer">Current writer</param>
+        /// <param name="width">Width</param>
+        /// <param name="style">Current style</param>
+        /// <returns>Task</returns>
+        public virtual Task NewLineActionAsync(PdfBlockLine line, int chunkIndex, IPdfPage page, PdfWriter writer, float width, PdfStyle style)
+        {
             return Task.CompletedTask;
         }
     }

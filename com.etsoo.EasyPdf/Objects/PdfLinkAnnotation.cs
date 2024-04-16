@@ -10,12 +10,28 @@ namespace com.etsoo.EasyPdf.Objects
     /// </summary>
     internal class PdfLinkAnnotation : PdfAnnotation
     {
+        /// <summary>
+        /// Can also be PdfAction
+        /// </summary>
+        public IPdfType A { get; set; }
+
         public IPdfType? Dest { get; set; }
 
         public string? H { get; set; }
 
-        public PdfLinkAnnotation(Rectangle rect) : base("Link", rect)
+        public PdfLinkAnnotation(IPdfType a, RectangleF rect) : base("Link", rect)
         {
+            A = a;
+            Border = new PdfArray(0, 0, 0);
+        }
+
+        protected override void AddItems()
+        {
+            base.AddItems();
+
+            Dic.AddNameItem(nameof(A), A);
+            Dic.AddNameItem(nameof(Dest), Dest);
+            Dic.AddNames(nameof(H), H);
         }
     }
 

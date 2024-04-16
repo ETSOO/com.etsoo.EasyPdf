@@ -93,6 +93,6 @@ namespace com.etsoo.EasyPdf.Fonts
         /// 输出字体
         /// </summary>
         /// <param name="writer">Writer</param>
-        Task WriteFontAsync(IPdfWriter writer);
+        Task WriteFontAsync(PdfWriter writer);
     }
 }

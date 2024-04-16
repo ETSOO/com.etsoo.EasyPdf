@@ -1,7 +1,5 @@
 ﻿using com.etsoo.EasyPdf.Content;
-using com.etsoo.EasyPdf.Fonts;
 using com.etsoo.EasyPdf.Objects;
-using com.etsoo.EasyPdf.Types;
 
 namespace com.etsoo.EasyPdf
 {
@@ -15,29 +13,7 @@ namespace com.etsoo.EasyPdf
         /// Current page
         /// 当前页面
         /// </summary>
-        public IPdfPage? CurrentPage { get; }
-
-        /// <summary>
-        /// Document
-        /// 文档对象
-        /// </summary>
-        IPdfDocument Document { get; }
-
-        /// <summary>
-        /// Current font
-        /// 当前字体
-        /// </summary>
-        IPdfFont? CurrentFont { get; }
-
-        /// <summary>
-        /// Create font
-        /// 创建字体
-        /// </summary>
-        /// <param name="familyName">Family name</param>
-        /// <param name="size">Size in pt (not px)</param>
-        /// <param name="style">Style</param>
-        /// <returns>Font</returns>
-        IPdfFont CreateFont(string familyName, float size, PdfFontStyle style = PdfFontStyle.Regular);
+        IPdfPage CurrentPage { get; }
 
         /// <summary>
         /// Start a new page
@@ -54,41 +30,5 @@ namespace com.etsoo.EasyPdf
         /// <param name="b">Block element</param>
         /// <returns>Task</returns>
         Task WriteAsync(PdfBlock b);
-
-        /// <summary>
-        /// Async add dictionary data object
-        /// 异步添加字典数据对象
-        /// </summary>
-        /// <param name="dic">Dictionary data object</param>
-        /// <returns>Task</returns>
-        Task<PdfObject> WriteDicAsync(PdfObjectDic dic);
-
-        /// <summary>
-        /// Write font
-        /// 输出字体
-        /// </summary>
-        /// <param name="font">Font</param>
-        /// <returns>Bytes</returns>
-        byte[] WriteFont(IPdfFont font);
-
-        /// <summary>
-        /// Write font
-        /// 输出字体
-        /// </summary>
-        /// <param name="operators">Operator bytes</param>
-        /// <param name="style">Current style</param>
-        /// <param name="required">Font reference is required</param>
-        /// <returns>Current font and changed or not</returns>
-        (IPdfFont font, bool fontChanged) WriteFont(List<byte[]> operators, PdfStyle style, bool required = false);
-
-        /// <summary>
-        /// Write font
-        /// 输出字体
-        /// </summary>
-        /// <param name="stream">Stream to write</param>
-        /// <param name="style">Current style</param>
-        /// <param name="required">Font reference is required</param>
-        /// <returns>Current font</returns>
-        ValueTask<IPdfFont> WriteFontAsync(Stream stream, PdfStyle style, bool required = false);
     }
 }

@@ -1,5 +1,5 @@
-﻿using System.Drawing;
-using System.Numerics;
+﻿using com.etsoo.EasyPdf.Support;
+using System.Drawing;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -264,6 +264,47 @@ namespace com.etsoo.EasyPdf.Content
         }
 
         /// <summary>
+        /// Opacity, 0 - 1 number
+        /// 不透明度
+        /// </summary>
+        public float Opacity { get; set; } = 1;
+
+        /// <summary>
+        /// Set opacity
+        /// 设置不透明度
+        /// </summary>
+        /// <param name="opacity">Opacity, 0 - 1 number</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetOpacity(float opacity)
+        {
+            Opacity = opacity;
+            return this;
+        }
+
+        /// <summary>
+        /// Rotate angle
+        /// 旋转角度
+        /// </summary>
+        public float Rotate { get; set; }
+
+        /// <summary>
+        /// Set rotate angle
+        /// 设置旋转角度
+        /// </summary>
+        /// <param name="angle">Rotate angle</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetRotate(float angle)
+        {
+            if (Math.Abs(angle) > 6 && angle == (int)angle)
+            {
+                angle = Convert.ToSingle(angle * Math.PI / 180);
+            }
+
+            Rotate = angle;
+            return this;
+        }
+
+        /// <summary>
         /// Text align
         /// 文本对齐
         /// </summary>
@@ -397,8 +438,10 @@ namespace com.etsoo.EasyPdf.Content
                 Height = Height,
                 Left = Left,
                 Margin = Margin,
+                Opacity = Opacity,
                 Padding = Padding,
                 Position = Position,
+                Rotate = Rotate,
                 Top = Top,
                 Width = Width
             };
@@ -422,34 +465,52 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="size">Default size</param>
         /// <param name="point">Start point inside the rectangle</param>
         /// <returns>Result</returns>
-        public RectangleF GetRectangle(SizeF? size = null, Vector2? point = null)
+        public RectangleF GetRectangle(SizeF? size = null, PdfPoint? point = null)
         {
             var width = Width?.PxToPt() ?? size?.Width ?? 0;
             var height = Height?.PxToPt() ?? size?.Height ?? 0;
+
             var marginLeft = Margin?.Left.PxToPt() ?? 0;
             var marginTop = Margin?.Top.PxToPt() ?? 0;
 
-            if (point.HasValue)
-            {
-                var p = point.Value;
-                marginLeft += p.X;
-                marginTop += p.Y;
-                width -= p.X;
-                height -= p.Y;
-            }
+            var marginRight = Margin?.Right.PxToPt() ?? 0;
+            var marginBottom = Margin?.Bottom.PxToPt() ?? 0;
+
+            width -= marginLeft + marginRight;
+            height -= marginTop + marginBottom;
+
+            float left, top;
 
             if (Position?.Equals(PositonAbsolte, StringComparison.OrdinalIgnoreCase) is true
                 || Position?.Equals(PositonRelative, StringComparison.OrdinalIgnoreCase) is true)
             {
-                var left = Left.GetValueOrDefault() + marginLeft;
-                var top = Top.GetValueOrDefault() + marginTop;
-
-                return new RectangleF(left, top, width, height);
+                left = Left.GetValueOrDefault() + marginLeft;
+                top = Top.GetValueOrDefault() + marginTop;
             }
             else
             {
-                return new RectangleF(marginLeft, marginTop, width, height);
+                if (point != null)
+                {
+                    left = point.X;
+                    top = point.Y;
+                    width -= point.X;
+                    height -= point.Y;
+
+                    // Update position
+                    point.X += marginLeft;
+                    point.Y += marginTop;
+                }
+                else
+                {
+                    left = 0;
+                    top = 0;
+                }
+
+                left += marginLeft;
+                top += marginTop;
             }
+
+            return new RectangleF(left, top, width, height);
         }
     }
 }

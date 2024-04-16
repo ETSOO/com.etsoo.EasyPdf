@@ -25,5 +25,12 @@
         {
             S = s;
         }
+
+        protected override void AddItems()
+        {
+            base.AddItems();
+
+            Dic.AddNames(nameof(S), S);
+        }
     }
 }

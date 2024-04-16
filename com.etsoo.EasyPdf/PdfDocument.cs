@@ -28,7 +28,7 @@ namespace com.etsoo.EasyPdf
 
         private readonly Stream stream;
         private readonly bool keepOpen;
-        private PdfWriter? writer;
+        private IPdfWriter? writer;
 
         /// <summary>
         /// Version
@@ -104,7 +104,7 @@ namespace com.etsoo.EasyPdf
         /// 异步获取写入器并开始写入
         /// </summary>
         /// <returns>PDF writer</returns>
-        public async ValueTask<PdfWriter> GetWriterAsync()
+        public async ValueTask<IPdfWriter> GetWriterAsync(Action<IPdfPage>? setup = null)
         {
             if (writer == null)
             {
@@ -121,6 +121,9 @@ namespace com.etsoo.EasyPdf
 
                 // Writer
                 writer = new PdfWriter(this, stream);
+
+                // New page
+                await writer.NewPageAsync(setup);
             }
 
             return writer;

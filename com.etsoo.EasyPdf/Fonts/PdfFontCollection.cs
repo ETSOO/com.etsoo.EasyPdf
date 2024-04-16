@@ -165,7 +165,7 @@ namespace com.etsoo.EasyPdf.Fonts
         /// </summary>
         /// <param name="writer">Writer</param>
         /// <returns>Task</returns>
-        public async Task WriteAsyc(IPdfWriter writer)
+        public async Task WriteAsyc(PdfWriter writer)
         {
             foreach (var item in Fonts)
             {

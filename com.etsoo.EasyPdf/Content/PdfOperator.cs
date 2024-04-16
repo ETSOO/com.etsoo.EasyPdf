@@ -117,6 +117,20 @@ namespace com.etsoo.EasyPdf.Content
         public readonly static byte[] Q = [81, PdfConstants.LineFeedByte];
 
         /// <summary>
+        /// Rotate the coordinate system, clockwise
+        /// </summary>
+        /// <param name="angle">Angle</param>
+        /// <param name="x">Position X</param>
+        /// <param name="y">Position Y</param>
+        /// <returns>Bytes</returns>
+        public static byte[] Rotate(float angle, float x, float y)
+        {
+            var cosAngle = Math.Cos(angle).ToSingle();
+            var sinAngle = Math.Sin(angle).ToSingle();
+            return Tm(cosAngle, -sinAngle, sinAngle, cosAngle, x, y, true);
+        }
+
+        /// <summary>
         /// Set RGB color for stroking operations
         /// </summary>
         /// <param name="color">Color</param>
@@ -337,6 +351,21 @@ namespace com.etsoo.EasyPdf.Content
             [
                 .. Encoding.ASCII.GetBytes($"[{width} {height}]"),
                     .. " 0 d\n"u8
+            ];
+        }
+
+        /// <summary>
+        /// Apply a graphics state parameter dictionary
+        /// 使用图形状态参数字典
+        /// </summary>
+        /// <param name="refName">Reference name</param>
+        /// <returns>Bytes</returns>
+        public static byte[] Zgs(string refName)
+        {
+            return
+            [
+                .. Encoding.ASCII.GetBytes($"/{refName}"),
+                .. " gs\n"u8
             ];
         }
 

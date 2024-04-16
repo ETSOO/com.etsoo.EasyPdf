@@ -398,5 +398,16 @@ namespace com.etsoo.EasyPdf
         {
             return PxToPt((float)px);
         }
+
+        /// <summary>
+        /// Double to single
+        /// </summary>
+        /// <param name="value">Double value</param>
+        /// <param name="digits">Digits go keep</param>
+        /// <returns>Result</returns>
+        public static float ToSingle(this double value, int digits = 6)
+        {
+            return (float)Math.Round(value, digits);
+        }
     }
 }

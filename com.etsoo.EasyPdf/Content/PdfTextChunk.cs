@@ -49,6 +49,13 @@ namespace com.etsoo.EasyPdf.Content
 
             var x = point.X;
             var y = point.Y;
+
+            if (Owner != null)
+            {
+                x -= Owner.BasePoint.X;
+                y -= Owner.BasePoint.Y;
+            }
+
             if (isItalic)
             {
                 x += PdfFontUtils.GetItalicSize(chunk.Height) / 1.1f;
@@ -96,7 +103,7 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="line">Current line</param>
         /// <param name="newLineAction">New line action</param>
         /// <returns>New page needed?</returns>
-        public override async Task<bool> WriteAsync(IPdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine, Task> newLineAction)
+        public override async Task<bool> WriteAsync(PdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction)
         {
             // Computed style
             var style = Style.GetComputedStyle();

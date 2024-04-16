@@ -1,5 +1,6 @@
 ﻿using com.etsoo.EasyPdf.Content;
 using com.etsoo.EasyPdf.Support;
+using com.etsoo.EasyPdf.Types;
 using System.Drawing;
 using System.Numerics;
 
@@ -11,6 +12,12 @@ namespace com.etsoo.EasyPdf.Objects
     /// </summary>
     public interface IPdfPage
     {
+        /// <summary>
+        /// Annotation dictionary array
+        /// 注释字典数组
+        /// </summary>
+        List<PdfObject> Annots { get; }
+
         /// <summary>
         /// Current drawing point inside the content rectangle
         /// 内容矩形内的当前绘制点
@@ -47,6 +54,13 @@ namespace com.etsoo.EasyPdf.Objects
         /// </summary>
         /// <returns>Task</returns>
         Task BeginTextAsync();
+
+        /// <summary>
+        /// Calculate current point
+        /// 计算当前点
+        /// </summary>
+        /// <returns>Result</returns>
+        Vector2 CalculatePoint();
 
         /// <summary>
         /// Calculate point
