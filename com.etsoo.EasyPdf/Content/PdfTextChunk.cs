@@ -67,7 +67,7 @@ namespace com.etsoo.EasyPdf.Content
             chunk.InsertAfter(pointBytes, PdfOperator.q);
 
             // Lending
-            if (Type == PdfChunkType.Text)
+            if (Type == PdfChunkType.Text && chunk.Font != null)
             {
                 var lineHeight = line.Height;
                 if (chunk.Font.LineHeight < lineHeight)
@@ -103,11 +103,8 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="line">Current line</param>
         /// <param name="newLineAction">New line action</param>
         /// <returns>New page needed?</returns>
-        public override async Task<bool> WriteAsync(PdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction)
+        public override async Task<bool> WriteInnerAsync(PdfWriter writer, PdfStyle style, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction)
         {
-            // Computed style
-            var style = Style.GetComputedStyle();
-
             // Operators
             var operators = new List<byte[]>
             {
@@ -144,12 +141,6 @@ namespace com.etsoo.EasyPdf.Content
             // Word spacing
             var wordSpacing = style.WordSpacing.GetValueOrDefault().PxToPt();
 
-            // Margin left
-            var marginLeft = (style.Margin?.Left ?? 0).PxToPt();
-
-            // Margin right
-            var marginRight = (style.Margin?.Right ?? 0).PxToPt();
-
             // Set styles
             var styleBytes = font.SetupStyle(style, out var fakeStyle);
             operators.AddRange(styleBytes);
@@ -160,8 +151,7 @@ namespace com.etsoo.EasyPdf.Content
             // New page
             var newPage = false;
 
-            // Start point
-            StartPoint = point.ToVector2();
+            // New chunk
             var chunk = new PdfBlockLineChunk(font, lineHeight, StartPoint, false, fakeStyle)
             {
                 Owner = this,
@@ -169,10 +159,6 @@ namespace com.etsoo.EasyPdf.Content
                 Style = style
             };
             line.AddChunk(chunk);
-
-            // Margin left
-            point.X += marginLeft;
-            line.Width += marginLeft;
 
             var lastBlankIndex = 0;
 
@@ -311,15 +297,8 @@ namespace com.etsoo.EasyPdf.Content
                 index++;
             } while (index < chars.Length);
 
-            // Margin right
-            point.X += marginRight;
-            line.Width += marginRight;
-
             // Complete the chunk
             CompleteChunk(chunk);
-
-            // End point
-            EndPoint = point.ToVector2();
 
             return newPage;
         }

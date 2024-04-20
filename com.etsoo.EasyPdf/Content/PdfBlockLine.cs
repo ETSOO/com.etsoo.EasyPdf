@@ -58,7 +58,7 @@ namespace com.etsoo.EasyPdf.Content
         /// Font
         /// 字体
         /// </summary>
-        public IPdfFont Font { get; }
+        public IPdfFont? Font { get; }
 
         /// <summary>
         /// Blank character
@@ -129,7 +129,7 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="startPoint">Start point</param>
         /// <param name="isSequence">Is sequence chunk</param>
         /// <param name="FontStyle">Font style</param>
-        public PdfBlockLineChunk(IPdfFont font, float height, Vector2 startPoint, bool isSequence, PdfFontStyle fontStyle = PdfFontStyle.Regular)
+        public PdfBlockLineChunk(IPdfFont? font, float height, Vector2 startPoint, bool isSequence, PdfFontStyle fontStyle = PdfFontStyle.Regular)
         {
             Font = font;
             Height = height;

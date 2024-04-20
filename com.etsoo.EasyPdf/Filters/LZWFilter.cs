@@ -8,16 +8,26 @@
     ///  LZT - on overflow, removes from the dictionary a phrase that has not been used for the longest time
     ///  https://segmentfault.com/a/1190000011425787
     /// </summary>
-    internal class LZWFilter : IFilter<LZWFilterParams>
+    internal class LZWFilter : IFilter
     {
+        /// <summary>
+        /// Name
+        /// 名称
+        /// </summary>
+        public string Name => "LZWDecode";
+
+        public LZWFilter(LZWFilterParams? parameters = null)
+        {
+
+        }
+
         /// <summary>
         /// Encode data
         /// 编码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data, LZWFilterParams? parameters = null)
+        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data)
         {
             // Dictionary
             var dic = new LZWDictionary();
@@ -27,13 +37,27 @@
         }
 
         /// <summary>
+        /// Async encode data
+        /// 异步编码数据
+        /// </summary>
+        /// <param name="data">Data</param>
+        /// <returns>Result</returns>
+        public async Task<ReadOnlyMemory<byte>> EncodeAsync(ReadOnlyMemory<byte> data)
+        {
+            await Task.CompletedTask;
+
+            var memory = new Memory<byte>();
+            Encode(data.Span).CopyTo(memory.Span);
+            return memory;
+        }
+
+        /// <summary>
         /// Decode data
         /// 解码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data, LZWFilterParams? parameters = null)
+        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data)
         {
             // Dictionary
             var dic = new LZWDictionary();

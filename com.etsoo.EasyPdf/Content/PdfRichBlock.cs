@@ -182,13 +182,13 @@ namespace com.etsoo.EasyPdf.Content
             }
             else
             {
-                await page.Stream.WriteAsync(PdfOperator.Tc(0));
+                // await page.Stream.WriteAsync(PdfOperator.Tc(0));
                 // await page.Stream.WriteAsync(PdfOperator.Tw(0));
             }
 
             // Line height
             var lineHeight = line.Height;
-            var firstHeight = line.Chunks[0].Font.LineHeight;
+            var firstHeight = line.Chunks[0].Font?.LineHeight ?? line.Chunks[0].Height;
 
             var chunkIndex = 0;
             PdfChunk? chunkObj = null;
@@ -224,7 +224,7 @@ namespace com.etsoo.EasyPdf.Content
                 }
 
                 var total = chunk.Chars.Count;
-                if (total > 0)
+                if (total > 0 && chunk.Font != null)
                 {
                     // Chunk spacing
                     var chunkLetterSpacing = chunk.Style.LetterSpacing.GetValueOrDefault().PxToPt() + letterSpacing;

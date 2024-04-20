@@ -41,8 +41,7 @@ namespace com.etsoo.EasyPdf.Content
                 Contents = linkTitle
             };
 
-            var linkRef = await writer.WriteDicAsync(link);
-            page.Annots.Add(linkRef.AsRef());
+            await writer.WriteLinkAsync(link);
         }
 
         public override async Task<bool> WriteAsync(PdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction)

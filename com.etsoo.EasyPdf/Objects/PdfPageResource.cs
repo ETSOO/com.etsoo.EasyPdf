@@ -27,9 +27,11 @@ namespace com.etsoo.EasyPdf.Objects
 
         public Dictionary<string, PdfObject> Font { get; } = [];
 
-        public Dictionary<string, PdfObject> XObject { get; } = [];
+        public Dictionary<string, PdfStreamDic> XObject { get; } = [];
 
-        public override Task WriteToAsync(Stream stream)
+        public Dictionary<string, PdfObject> XObjectRefs { get; } = [];
+
+        public override async Task WriteToAsync(Stream stream)
         {
             if (ExtGState.Count != 0)
             {
@@ -42,15 +44,15 @@ namespace com.etsoo.EasyPdf.Objects
                 AddNameDic(nameof(Font), Font);
             }
 
-            if (XObject.Count != 0)
+            if (XObjectRefs.Count != 0)
             {
                 ProcSet.AddRange([PdfPageResourceProcedure.ImageB, PdfPageResourceProcedure.ImageC, PdfPageResourceProcedure.ImageI]);
-                AddNameDic(nameof(XObject), XObject);
+                AddNameDic(nameof(XObject), XObjectRefs);
             }
 
             AddNameArray(nameof(ProcSet), ProcSet.Select(p => new PdfName(p.ToString())));
 
-            return base.WriteToAsync(stream);
+            await base.WriteToAsync(stream);
         }
     }
 }

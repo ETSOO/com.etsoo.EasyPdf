@@ -70,7 +70,7 @@ namespace com.etsoo.EasyPdf
         /// 创建索引对象
         /// </summary>
         /// <returns>Result</returns>
-        private PdfObject CreateObj()
+        public PdfObject CreateObj()
         {
             // Next index
             objIndex++;
@@ -153,8 +153,7 @@ namespace com.etsoo.EasyPdf
             // catalog / root
             var catalog = new PdfCatalog(pageTree.Obj.AsRef())
             {
-                Lang = Document.Metadata.Culture?.TwoLetterISOLanguageName,
-                URI = new PdfLinkBaseDic(Document.BaseUri)
+                Lang = Document.Metadata.Culture?.TwoLetterISOLanguageName
             };
             var catalogObj = await WriteDicAsync(catalog);
 
@@ -241,14 +240,17 @@ namespace com.etsoo.EasyPdf
         /// <returns>Task</returns>
         internal async Task<PdfObject> WriteDicAsync(PdfObjectDic dic)
         {
-            // Current position
-            var pos = (uint)stream.Position;
-
             // When obj is null
             if (dic.Obj == null)
             {
                 dic.Obj = CreateObj();
             }
+
+            // Write related streams, may change the stream position
+            await dic.WriteRelatedStreams(this, stream);
+
+            // Current position
+            var pos = (uint)stream.Position;
 
             // Write to stream
             await dic.WriteToAsync(stream);
@@ -365,10 +367,42 @@ namespace com.etsoo.EasyPdf
             currentPage.Annots.Add(linkRef.AsRef());
         }
 
+        /// <summary>
+        /// Write image
+        /// 输出图片
+        /// </summary>
+        /// <param name="image">Image stream</param>
+        /// <returns>Reference name</returns>
+        internal string WriteImage(PdfImageStream image)
+        {
+            // Name
+            var name = $"Im{currentPage.Resources.XObject.Count}";
+
+            // Take the index for the object
+            image.Obj = CreateObj();
+
+            // Add to current page
+            currentPage.Resources.XObject[name] = image;
+
+            // Return the name
+            return name;
+        }
+
         private async Task WritePageAsync(PdfPage page)
         {
             // Finish writing
             await page.WriteEndAsync(this);
+
+            // Write XObject
+            // A good idea to write all streams first
+            foreach (var x in page.Resources.XObject)
+            {
+                if (x.Value.Obj != null)
+                {
+                    var obj = await WriteDicAsync(x.Value);
+                    page.Resources.XObjectRefs[x.Key] = obj;
+                }
+            }
 
             // Write page
             var pageObj = await WriteDicAsync(page);

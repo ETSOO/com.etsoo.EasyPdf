@@ -1,7 +1,7 @@
 ﻿using com.etsoo.EasyPdf.Content;
 using com.etsoo.EasyPdf.Objects;
-using com.etsoo.EasyPdf.Support;
 using com.etsoo.EasyPdf.Types;
+using com.etsoo.PureIO;
 using CommunityToolkit.HighPerformance;
 using System.Buffers;
 using System.Drawing;
@@ -15,6 +15,21 @@ namespace com.etsoo.EasyPdf.Fonts
     /// </summary>
     internal partial class PdfBaseFont : IPdfBaseFont
     {
+        private static Encoding? encoding1252;
+
+        internal static Encoding Encoding1252
+        {
+            get
+            {
+                if (encoding1252 == null)
+                {
+                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                    encoding1252 = Encoding.GetEncoding(1252);
+                }
+                return encoding1252;
+            }
+        }
+
         // Minimum required tables for CID font
         private const string GLYF = "glyf";
         private const string LOCA = "loca";
@@ -28,26 +43,26 @@ namespace com.etsoo.EasyPdf.Fonts
 
         // Table Directory
         // https://docs.microsoft.com/en-us/typography/opentype/spec/otff
-        internal static PdfBaseFont Parse(PdfRandomAccessFileOrArray rf)
+        internal static PdfBaseFont Parse(PureStreamReader sr)
         {
             // Contains the location of the several tables
             Dictionary<string, OffsetItem> tables = [];
 
             // Number of tables
-            var tableCount = rf.ReadUnsignedShort();
+            var tableCount = sr.ReadUshort();
 
             // Ignored searchRange, entrySelector, rangeShift fields (2 x 3)
-            rf.SkipBytes(6);
+            sr.Skip(6);
 
             for (var k = 0; k < tableCount; ++k)
             {
                 // Table identifier
-                var tag = rf.ReadString(4);
+                var tag = sr.ReadString(4, Encoding1252);
 
                 // Checksum for this table
                 // Offset from beginning of font file
                 // Length of this table
-                tables[tag] = new OffsetItem(rf.ReadUInt(), rf.ReadUInt(), rf.ReadUInt());
+                tables[tag] = new OffsetItem(sr.ReadUint(), sr.ReadUint(), sr.ReadUint());
             }
 
             OffsetItem? cff = null;
@@ -56,23 +71,23 @@ namespace com.etsoo.EasyPdf.Fonts
                 cff = tl;
             }
 
-            var head = ParseHeadTable(tables, rf);
-            var hhea = ParseHheaTable(tables, rf);
-            var vhea = ParseVheaTable(tables, rf);
-            var metrics = ParseMetricsTable(tables, rf, head, hhea);
-            var post = ParsePostTable(tables, rf, hhea);
-            var locas = ParseLocaTable(tables, rf, head.locaShortVersion);
-            var names = ParseNameTable(tables, rf);
-            var cmaps = ParseCMapTable(tables, rf);
-            var hmetrics = ParseHmtxTable(tables, rf, hhea.numberOfHMetrics, head.unitsPerEm);
+            var head = ParseHeadTable(tables, sr);
+            var hhea = ParseHheaTable(tables, sr);
+            var vhea = ParseVheaTable(tables, sr);
+            var metrics = ParseMetricsTable(tables, sr, head, hhea);
+            var post = ParsePostTable(tables, sr, hhea);
+            var locas = ParseLocaTable(tables, sr, head.locaShortVersion);
+            var names = ParseNameTable(tables, sr);
+            var cmaps = ParseCMapTable(tables, sr);
+            var hmetrics = ParseHmtxTable(tables, sr, hhea.numberOfHMetrics, head.unitsPerEm);
 
             VMetrics[]? vmetrics = null;
             if (vhea is not null)
             {
-                vmetrics = ParseVmtxTable(tables, rf, vhea.numOfLongVerMetrics);
+                vmetrics = ParseVmtxTable(tables, sr, vhea.numOfLongVerMetrics);
             }
 
-            var kern = ParseKernTable(tables, rf, head.unitsPerEm);
+            var kern = ParseKernTable(tables, sr, head.unitsPerEm);
 
             // Fill required tables data
             ushort filledTables = 1;
@@ -84,12 +99,10 @@ namespace com.etsoo.EasyPdf.Fonts
                 }
 
                 // Move to the start
-                rf.Seek(td.Offset);
+                sr.Seek(td.Offset);
 
                 // Read all data
-                var data = new byte[td.Length];
-                rf.ReadFully(data);
-                td.Data = data;
+                td.Data = sr.ReadBytes(td.Length).ToArray();
 
                 filledTables++;
             }
@@ -707,7 +720,7 @@ namespace com.etsoo.EasyPdf.Fonts
                 }
 
                 // Write name (4)
-                aw.Write(PdfRandomAccessFileOrArray.Encoding1252.GetBytes(tableName));
+                aw.Write(Encoding1252.GetBytes(tableName));
 
                 // Checksum (4)
                 aw.Write(GetBytes(table.Checksum));

@@ -96,9 +96,9 @@ namespace com.etsoo.EasyPdf.Objects
             Rect = rect;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNames(nameof(Subtype), Subtype);
             Dic.AddNameRect(nameof(Rect), Rect);

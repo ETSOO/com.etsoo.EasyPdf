@@ -26,9 +26,9 @@
             S = s;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNames(nameof(S), S);
         }

@@ -9,9 +9,9 @@
         public float CA { get; set; }
         public float ca { get; set; }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNameNum(nameof(CA), CA);
             Dic.AddNameNum(nameof(ca), ca);

@@ -5,7 +5,7 @@ namespace com.etsoo.EasyPdf.Filters
     /// <summary>
     /// Flate is basically Zip compression; so, any content streams which are not compressed will be compressed using Flate
     /// </summary>
-    internal class FlateFilter : IFilter<FlateFilterParams>
+    internal class FlateFilter : IFilter
     {
         // CMF - Low 4-bit compression method (default 8 means deflate);
         //       High 4-bit information field depending on the compression method (default 7, 32K window size), byte = 120 (01111000)
@@ -19,20 +19,34 @@ namespace com.etsoo.EasyPdf.Filters
         // http://www.faqs.org/rfcs/rfc1950.html
 
         /// <summary>
+        /// Name
+        /// 名称
+        /// </summary>
+        public string Name => "FlateDecode";
+
+        public FlateFilter(FlateFilterParams? parameters = null)
+        {
+
+        }
+
+        /// <summary>
         /// Encode data
         /// 编码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data, FlateFilterParams? parameters = null)
+        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data)
         {
             using var stream = PdfConstants.StreamManager.GetStream();
             SetupCompressStream(stream);
 
-            using var zip = new DeflateStream(stream, CompressionMode.Compress, true);
+            using var zip = new DeflateStream(stream, CompressionMode.Compress);
             zip.Write(data);
-            return stream.ToArray();
+            zip.Flush();
+
+            stream.Position = 0;
+
+            return stream.ToBytes().Span;
         }
 
         private void SetupCompressStream(Stream stream)
@@ -49,16 +63,19 @@ namespace com.etsoo.EasyPdf.Filters
         /// 异步编码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public async Task<MemoryStream> EncodeAsync(ReadOnlyMemory<byte> data, FlateFilterParams? parameters = null)
+        public async Task<ReadOnlyMemory<byte>> EncodeAsync(ReadOnlyMemory<byte> data)
         {
-            var stream = PdfConstants.StreamManager.GetStream();
+            await using var stream = PdfConstants.StreamManager.GetStream();
             SetupCompressStream(stream);
 
-            await using var zip = new DeflateStream(stream, CompressionMode.Compress, true);
+            await using var zip = new DeflateStream(stream, CompressionMode.Compress);
             await zip.WriteAsync(data);
-            return stream;
+            await zip.FlushAsync();
+
+            stream.Position = 0;
+
+            return await stream.ToBytesAsync();
         }
 
         /// <summary>
@@ -66,19 +83,17 @@ namespace com.etsoo.EasyPdf.Filters
         /// 解码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data, FlateFilterParams? parameters = null)
+        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data)
         {
             // Skin first two bytes (CMF & FLG)
             data = data[2..];
 
             using var inputStream = PdfConstants.StreamManager.GetStream(data);
-            using var stream = PdfConstants.StreamManager.GetStream();
             using var zip = new DeflateStream(inputStream, CompressionMode.Decompress);
+            zip.Flush();
 
-            zip.CopyTo(stream);
-            return stream.ToArray();
+            return zip.ToBytes().Span;
         }
 
         /// <summary>
@@ -86,15 +101,17 @@ namespace com.etsoo.EasyPdf.Filters
         /// 异步解码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public async Task<MemoryStream> DecodeAsync(ReadOnlyMemory<byte> data, FlateFilterParams? parameters = null)
+        public async Task<ReadOnlyMemory<byte>> DecodeAsync(ReadOnlyMemory<byte> data)
         {
-            var stream = PdfConstants.StreamManager.GetStream();
-            using var inputStream = PdfConstants.StreamManager.GetStream(data.Span);
-            using var zip = new DeflateStream(inputStream, CompressionMode.Decompress);
-            await zip.CopyToAsync(stream);
-            return stream;
+            // Skin first two bytes (CMF & FLG)
+            data = data[2..];
+
+            await using var inputStream = PdfConstants.StreamManager.GetStream(data.Span);
+            await using var zip = new DeflateStream(inputStream, CompressionMode.Decompress);
+            await zip.FlushAsync();
+
+            return await zip.ToBytesAsync();
         }
     }
 }

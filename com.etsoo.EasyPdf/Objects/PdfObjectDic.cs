@@ -33,18 +33,50 @@ namespace com.etsoo.EasyPdf.Objects
             Dic = new PdfDictionary();
         }
 
-        protected virtual void AddItems()
+        /// <summary>
+        /// Add property items
+        /// 添加属性项
+        /// </summary>
+        /// <returns>Task</returns>
+        protected virtual Task AddItemsAsync()
         {
             // Type
             Dic.AddNames(nameof(Type), Type);
+
+            return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Write related streams
+        /// 写入相关流
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="stream">Stream</param>
+        /// <returns>Task</returns>
+        public virtual Task WriteRelatedStreams(PdfWriter writer, Stream stream)
+        {
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Write to stream with other actions
+        /// 写入流并执行其他操作
+        /// </summary>
+        /// <param name="stream">Stream</param>
+        /// <returns>Task</returns>
         protected virtual async Task WriteOthersAsync(Stream stream)
         {
             await Task.CompletedTask;
         }
 
-        public async Task WriteToAsync(Stream stream)
+        /// <summary>
+        /// Write to stream
+        /// 写入流
+        /// </summary>
+        /// <param name="stream">Stream to write</param>
+        /// <returns>Task</returns>
+        /// <exception cref="NullReferenceException"></exception>
+        public virtual async Task WriteToAsync(Stream stream)
         {
             // Check obj
             if (Obj == null)
@@ -60,7 +92,7 @@ namespace com.etsoo.EasyPdf.Objects
             stream.WriteByte(PdfConstants.LineFeedByte);
 
             // Add custom items
-            AddItems();
+            await AddItemsAsync();
 
             // << ... >> dictionary
             await Dic.WriteToAsync(stream);

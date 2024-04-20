@@ -4,7 +4,7 @@
     /// PDF font stream
     /// PDF 字体流
     /// </summary>
-    public class PdfFontStream : PdfStreamDic
+    internal class PdfFontStream : PdfStreamDic
     {
         public string? Subtype { get; init; }
 
@@ -12,9 +12,9 @@
         {
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNames(nameof(Subtype), Subtype);
         }

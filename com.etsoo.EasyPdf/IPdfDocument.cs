@@ -17,12 +17,6 @@ namespace com.etsoo.EasyPdf
         decimal Version { get; }
 
         /// <summary>
-        /// Base URI
-        /// 基础 URI
-        /// </summary>
-        string? BaseUri { get; set; }
-
-        /// <summary>
         /// Page data
         /// 页面数据
         /// </summary>

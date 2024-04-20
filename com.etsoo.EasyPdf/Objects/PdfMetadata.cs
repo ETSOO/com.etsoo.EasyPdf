@@ -35,9 +35,9 @@ namespace com.etsoo.EasyPdf.Objects
             CreationDate = DateTime.Now;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNameItem(nameof(Producer), new PdfString(Producer));
             Dic.AddNameItem(nameof(CreationDate), new PdfDateTime(CreationDate));

@@ -93,7 +93,57 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="line">Current line</param>
         /// <param name="newLineAction">New line action</param>
         /// <returns>Need new page or not</returns>
-        public abstract Task<bool> WriteAsync(PdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction);
+        public virtual async Task<bool> WriteAsync(PdfWriter writer, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction)
+        {
+            // Computed style
+            var style = Style.GetComputedStyle();
+
+            // Opacity
+            var opacity = style.Opacity;
+            if (opacity < 1)
+            {
+                await writer.DefineOpacityAsync(opacity, true);
+            }
+
+            // Margin left
+            var marginLeft = (style.Margin?.Left ?? 0).PxToPt();
+
+            // Margin right
+            var marginRight = (style.Margin?.Right ?? 0).PxToPt();
+
+            // Start point
+            StartPoint = point.ToVector2();
+
+            // Margin left
+            point.X += marginLeft;
+            line.Width += marginLeft;
+
+            // Inner rendering
+            var newPage = await WriteInnerAsync(writer, style, rect, point, line, newLineAction);
+
+            // Margin right
+            point.X += marginRight;
+            line.Width += marginRight;
+
+            // End point
+            EndPoint = point.ToVector2();
+
+            // Return
+            return newPage;
+        }
+
+        /// <summary>
+        /// Write inner chunk
+        /// 输出内部块
+        /// </summary>
+        /// <param name="writer">Writer</param>
+        /// <param name="style">Calculated style</param>
+        /// <param name="rect">Drawing rectangle</param>
+        /// <param name="point">Current point</param>
+        /// <param name="line">Current line</param>
+        /// <param name="newLineAction">New line action</param>
+        /// <returns>Need new page or not</returns>
+        public abstract Task<bool> WriteInnerAsync(PdfWriter writer, PdfStyle style, RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction);
 
         /// <summary>
         /// Calculate position

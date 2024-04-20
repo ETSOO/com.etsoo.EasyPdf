@@ -416,6 +416,11 @@ namespace com.etsoo.EasyPdf.Content
             return default;
         }
 
+        /// <summary>
+        /// Get computed style
+        /// 获取计算后的样式
+        /// </summary>
+        /// <returns>Style</returns>
         public PdfStyle GetComputedStyle()
         {
             return new PdfStyle()
@@ -511,6 +516,44 @@ namespace com.etsoo.EasyPdf.Content
             }
 
             return new RectangleF(left, top, width, height);
+        }
+
+        public (int width, int height) GetSize(float sourceWidth, float sourceHeight, System.Drawing.RectangleF rect)
+        {
+            var cssWidth = Width;
+            var cssHeight = Height;
+
+            int width, height;
+
+            var ratio = sourceWidth / sourceHeight;
+            if (cssWidth.HasValue)
+            {
+                width = (int)cssWidth.Value.PxToPt();
+
+                if (cssHeight.HasValue)
+                {
+                    height = (int)cssHeight.Value.PxToPt();
+                }
+                else
+                {
+                    height = (int)(width / ratio);
+                }
+            }
+            else
+            {
+                if (cssHeight.HasValue)
+                {
+                    height = (int)cssHeight.Value.PxToPt();
+                    width = (int)(height * ratio);
+                }
+                else
+                {
+                    width = (int)rect.Width;
+                    height = (int)rect.Height;
+                }
+            }
+
+            return (width, height);
         }
     }
 }

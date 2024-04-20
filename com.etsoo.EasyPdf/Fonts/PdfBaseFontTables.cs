@@ -1,4 +1,5 @@
-﻿using com.etsoo.EasyPdf.Support;
+﻿using com.etsoo.PureIO;
+using System.Text;
 
 namespace com.etsoo.EasyPdf.Fonts
 {
@@ -237,7 +238,7 @@ namespace com.etsoo.EasyPdf.Fonts
             VariationsPostScriptNamePrefix = 25
         }
 
-        private static HeadTable ParseHeadTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf)
+        private static HeadTable ParseHeadTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr)
         {
             if (!tables.TryGetValue("head", out var tl))
             {
@@ -245,24 +246,24 @@ namespace com.etsoo.EasyPdf.Fonts
             }
 
             // Ignored majorVersion(2), minorVersion(2), fontRevision(4), checksumAdjustment(4), magicNumber(4)
-            rf.Seek(tl.Offset + 16);
+            sr.Seek(tl.Offset + 16);
 
-            var flags = rf.ReadUnsignedShort();
-            var unitsPerEm = rf.ReadUnsignedShort();
+            var flags = sr.ReadUshort();
+            var unitsPerEm = sr.ReadUshort();
 
             // Ignored created & modified fields (8 bytes x 2)
-            rf.SkipBytes(16);
+            sr.Skip(16);
 
-            var xMin = rf.ReadShort();
-            var yMin = rf.ReadShort();
-            var xMax = rf.ReadShort();
-            var yMax = rf.ReadShort();
-            var macStyle = rf.ReadUnsignedShort();
+            var xMin = sr.ReadShort();
+            var yMin = sr.ReadShort();
+            var xMax = sr.ReadShort();
+            var yMax = sr.ReadShort();
+            var macStyle = sr.ReadUshort();
 
             // Ignored lowestRecPPEM and fontDirectionHint
-            rf.SkipBytes(4);
+            sr.Skip(4);
 
-            var indexToLocFormat = rf.ReadShort();
+            var indexToLocFormat = sr.ReadShort();
 
             return new HeadTable
             {
@@ -277,7 +278,7 @@ namespace com.etsoo.EasyPdf.Fonts
             };
         }
 
-        private static HheaTable ParseHheaTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf)
+        private static HheaTable ParseHheaTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr)
         {
             if (!tables.TryGetValue(HHEA, out var tl))
             {
@@ -285,22 +286,22 @@ namespace com.etsoo.EasyPdf.Fonts
             }
 
             // Ignored majorVersion(2) & minorVersion(2)
-            rf.Seek(tl.Offset + 4);
+            sr.Seek(tl.Offset + 4);
 
-            var ascender = rf.ReadShort();
-            var descender = rf.ReadShort();
-            var lineGap = rf.ReadShort();
-            var advanceWidthMax = rf.ReadUnsignedShort();
-            var minLeftSideBearing = rf.ReadShort();
-            var minRightSideBearing = rf.ReadShort();
-            var xMaxExtent = rf.ReadShort();
-            var caretSlopeRise = rf.ReadShort();
-            var caretSlopeRun = rf.ReadShort();
+            var ascender = sr.ReadShort();
+            var descender = sr.ReadShort();
+            var lineGap = sr.ReadShort();
+            var advanceWidthMax = sr.ReadUshort();
+            var minLeftSideBearing = sr.ReadShort();
+            var minRightSideBearing = sr.ReadShort();
+            var xMaxExtent = sr.ReadShort();
+            var caretSlopeRise = sr.ReadShort();
+            var caretSlopeRun = sr.ReadShort();
 
             // Ignored caretOffset(2), reserved fields(2 x 4), metricDataFormat(2)
-            rf.SkipBytes(12);
+            sr.Skip(12);
 
-            var numberOfHMetrics = rf.ReadUnsignedShort();
+            var numberOfHMetrics = sr.ReadUshort();
 
             return new HheaTable
             {
@@ -317,7 +318,7 @@ namespace com.etsoo.EasyPdf.Fonts
             };
         }
 
-        private static VheaTable? ParseVheaTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf)
+        private static VheaTable? ParseVheaTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr)
         {
             if (!tables.TryGetValue("vhea", out var tl))
             {
@@ -326,22 +327,22 @@ namespace com.etsoo.EasyPdf.Fonts
             }
 
             // Ignored Version16Dot16(4)
-            rf.Seek(tl.Offset + 4);
+            sr.Seek(tl.Offset + 4);
 
-            var vertTypoAscender = rf.ReadShort();
-            var vertTypoDescender = rf.ReadShort();
-            var vertTypoLineGap = rf.ReadShort();
-            var advanceHeightMax = rf.ReadUnsignedShort();
-            var minTopSideBearing = rf.ReadShort();
-            var minBottomSideBearing = rf.ReadShort();
-            var yMaxExtent = rf.ReadShort();
-            var caretSlopeRise = rf.ReadShort();
-            var caretSlopeRun = rf.ReadShort();
+            var vertTypoAscender = sr.ReadShort();
+            var vertTypoDescender = sr.ReadShort();
+            var vertTypoLineGap = sr.ReadShort();
+            var advanceHeightMax = sr.ReadUshort();
+            var minTopSideBearing = sr.ReadShort();
+            var minBottomSideBearing = sr.ReadShort();
+            var yMaxExtent = sr.ReadShort();
+            var caretSlopeRise = sr.ReadShort();
+            var caretSlopeRun = sr.ReadShort();
 
             // Ignored caretOffset(2), reserved fields(2 x 4), metricDataFormat(2)
-            rf.SkipBytes(12);
+            sr.Skip(12);
 
-            var numOfLongVerMetrics = rf.ReadUnsignedShort();
+            var numOfLongVerMetrics = sr.ReadUshort();
 
             return new VheaTable
             {
@@ -358,55 +359,53 @@ namespace com.etsoo.EasyPdf.Fonts
             };
         }
 
-        private static MetricsTable ParseMetricsTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf, HeadTable head, HheaTable hhea)
+        private static MetricsTable ParseMetricsTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr, HeadTable head, HheaTable hhea)
         {
             if (tables.TryGetValue("OS/2", out var tl))
             {
-                rf.Seek(tl.Offset);
-                var panose = new byte[10];
-                var achVendID = new byte[4];
+                sr.Seek(tl.Offset);
 
-                var version = rf.ReadUnsignedShort();
-                var xAvgCharWidth = rf.ReadShort();
-                var usWeightClass = rf.ReadUnsignedShort();
-                var usWidthClass = rf.ReadUnsignedShort();
-                var fsType = rf.ReadShort();
-                var ySubscriptXSize = rf.ReadShort();
-                var ySubscriptYSize = rf.ReadShort();
-                var ySubscriptXOffset = rf.ReadShort();
-                var ySubscriptYOffset = rf.ReadShort();
-                var ySuperscriptXSize = rf.ReadShort();
-                var ySuperscriptYSize = rf.ReadShort();
-                var ySuperscriptXOffset = rf.ReadShort();
-                var ySuperscriptYOffset = rf.ReadShort();
-                var yStrikeoutSize = rf.ReadShort();
-                var yStrikeoutPosition = rf.ReadShort();
-                var sFamilyClass = rf.ReadShort();
-                rf.ReadFully(panose);
-                rf.SkipBytes(16);
-                rf.ReadFully(achVendID);
-                var fsSelection = rf.ReadUnsignedShort();
-                var usFirstCharIndex = rf.ReadUnsignedShort();
-                var usLastCharIndex = rf.ReadUnsignedShort();
-                var sTypoAscender = rf.ReadShort();
-                var sTypoDescender = rf.ReadShort();
+                var version = sr.ReadUshort();
+                var xAvgCharWidth = sr.ReadShort();
+                var usWeightClass = sr.ReadUshort();
+                var usWidthClass = sr.ReadUshort();
+                var fsType = sr.ReadShort();
+                var ySubscriptXSize = sr.ReadShort();
+                var ySubscriptYSize = sr.ReadShort();
+                var ySubscriptXOffset = sr.ReadShort();
+                var ySubscriptYOffset = sr.ReadShort();
+                var ySuperscriptXSize = sr.ReadShort();
+                var ySuperscriptYSize = sr.ReadShort();
+                var ySuperscriptXOffset = sr.ReadShort();
+                var ySuperscriptYOffset = sr.ReadShort();
+                var yStrikeoutSize = sr.ReadShort();
+                var yStrikeoutPosition = sr.ReadShort();
+                var sFamilyClass = sr.ReadShort();
+                var panose = sr.ReadBytes(10).ToArray();
+                sr.Skip(16);
+                var achVendID = sr.ReadBytes(4).ToArray();
+                var fsSelection = sr.ReadUshort();
+                var usFirstCharIndex = sr.ReadUshort();
+                var usLastCharIndex = sr.ReadUshort();
+                var sTypoAscender = sr.ReadShort();
+                var sTypoDescender = sr.ReadShort();
                 if (sTypoDescender > 0)
                     sTypoDescender = (short)(-sTypoDescender);
-                var sTypoLineGap = rf.ReadShort();
-                var usWinAscent = rf.ReadUnsignedShort();
-                var usWinDescent = rf.ReadUnsignedShort();
+                var sTypoLineGap = sr.ReadShort();
+                var usWinAscent = sr.ReadUshort();
+                var usWinDescent = sr.ReadUshort();
                 var ulCodePageRange1 = 0;
                 var ulCodePageRange2 = 0;
                 if (version > 0)
                 {
-                    ulCodePageRange1 = rf.ReadInt();
-                    ulCodePageRange2 = rf.ReadInt();
+                    ulCodePageRange1 = sr.ReadInt();
+                    ulCodePageRange2 = sr.ReadInt();
                 }
                 short sCapHeight;
                 if (version > 1)
                 {
-                    rf.SkipBytes(2);
-                    sCapHeight = rf.ReadShort();
+                    sr.Skip(2);
+                    sCapHeight = sr.ReadShort();
                 }
                 else
                     sCapHeight = (short)(0.7 * head.unitsPerEm);
@@ -482,7 +481,7 @@ namespace com.etsoo.EasyPdf.Fonts
             }
         }
 
-        private static PostTable ParsePostTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf, HheaTable hhea)
+        private static PostTable ParsePostTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr, HheaTable hhea)
         {
             double italicAngle;
             bool isFixedPitch;
@@ -490,13 +489,13 @@ namespace com.etsoo.EasyPdf.Fonts
             short underlineThickness;
             if (tables.TryGetValue("post", out var tl))
             {
-                rf.Seek(tl.Offset + 4);
-                var mantissa = rf.ReadShort();
-                var fraction = rf.ReadUnsignedShort();
+                sr.Seek(tl.Offset + 4);
+                var mantissa = sr.ReadShort();
+                var fraction = sr.ReadUshort();
                 italicAngle = mantissa + fraction/16384.0d;
-                underlinePosition = rf.ReadShort();
-                underlineThickness = rf.ReadShort();
-                isFixedPitch = rf.ReadInt() != 0;
+                underlinePosition = sr.ReadShort();
+                underlineThickness = sr.ReadShort();
+                isFixedPitch = sr.ReadInt() != 0;
             }
             else
             {
@@ -514,10 +513,10 @@ namespace com.etsoo.EasyPdf.Fonts
             else
             {
                 // Ignored Version16Dot16
-                rf.Seek(tl.Offset + 4);
+                sr.Seek(tl.Offset + 4);
 
                 // numGlyphs - The number of glyphs in the font
-                numGlyphs = rf.ReadUnsignedShort();
+                numGlyphs = sr.ReadUshort();
             }
 
             return new PostTable
@@ -532,7 +531,7 @@ namespace com.etsoo.EasyPdf.Fonts
 
         // hmtx — Horizontal Metrics Table
         // https://docs.microsoft.com/en-us/typography/opentype/spec/hmtx
-        private static HMetrics[] ParseHmtxTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf, int numberOfHMetrics, int unitsPerEm)
+        private static HMetrics[] ParseHmtxTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr, int numberOfHMetrics, int unitsPerEm)
         {
             if (!tables.TryGetValue(HMTX, out var tl))
             {
@@ -543,12 +542,12 @@ namespace com.etsoo.EasyPdf.Fonts
             //  in which case the advance width value of the last record applies to all remaining glyph IDs.
             var hmetrics = new HMetrics[numberOfHMetrics];
 
-            rf.Seek(tl.Offset);
+            sr.Seek(tl.Offset);
 
             for (int k = 0; k < numberOfHMetrics; ++k)
             {
-                var advanceWidth = rf.ReadUnsignedShort();
-                var lsb = rf.ReadShort();
+                var advanceWidth = sr.ReadUshort();
+                var lsb = sr.ReadShort();
 
                 hmetrics[k] = new HMetrics
                 {
@@ -562,7 +561,7 @@ namespace com.etsoo.EasyPdf.Fonts
 
         // vmtx — Vertical Metrics Table
         // https://docs.microsoft.com/en-us/typography/opentype/spec/vmtx
-        private static VMetrics[]? ParseVmtxTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf, int numOfLongVerMetrics)
+        private static VMetrics[]? ParseVmtxTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr, int numOfLongVerMetrics)
         {
             if (!tables.TryGetValue("vmtx", out var tl))
             {
@@ -573,12 +572,12 @@ namespace com.etsoo.EasyPdf.Fonts
             //  As an optimization, the number of records can be less than the number of glyphs,
             var vmetrics = new VMetrics[numOfLongVerMetrics];
 
-            rf.Seek(tl.Offset);
+            sr.Seek(tl.Offset);
 
             for (int k = 0; k < numOfLongVerMetrics; ++k)
             {
-                var advanceHeight = rf.ReadUnsignedShort();
-                var topSideBearing = rf.ReadShort();
+                var advanceHeight = sr.ReadUshort();
+                var topSideBearing = sr.ReadShort();
 
                 vmetrics[k] = new VMetrics
                 {
@@ -601,18 +600,18 @@ namespace com.etsoo.EasyPdf.Fonts
 
         // name - Naming Table
         // https://docs.microsoft.com/en-us/typography/opentype/spec/name
-        private static FontName[] ParseNameTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf)
+        private static FontName[] ParseNameTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr)
         {
             if (!tables.TryGetValue("name", out var tl))
             {
                 throw new Exception($"Table 'name' does not exist");
             }
 
-            rf.Seek(tl.Offset);
+            sr.Seek(tl.Offset);
 
-            var version = rf.ReadUnsignedShort();
-            var count = rf.ReadUnsignedShort();
-            var storageOffset = rf.ReadUnsignedShort();
+            var version = sr.ReadUshort();
+            var count = sr.ReadUshort();
+            var storageOffset = sr.ReadUshort();
 
             var names = new FontName[count];
 
@@ -620,40 +619,40 @@ namespace com.etsoo.EasyPdf.Fonts
             {
                 // https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#encoding-records-and-encodings
 
-                var platform = GetPlatform(rf.ReadUnsignedShort());
+                var platform = GetPlatform(sr.ReadUshort());
 
-                var encodingID = rf.ReadUnsignedShort();
-                var languageID = rf.ReadUnsignedShort();
+                var encodingID = sr.ReadUshort();
+                var languageID = sr.ReadUshort();
 
-                var nameID = rf.ReadUnsignedShort();
+                var nameID = sr.ReadUshort();
                 if (!Enum.TryParse<FontNameId>(nameID.ToString(), out var nameIdValue))
                 {
                     nameIdValue = FontNameId.Reserved;
                 }
 
-                var length = rf.ReadUnsignedShort();
-                var offset = rf.ReadUnsignedShort();
+                var length = sr.ReadUshort();
+                var offset = sr.ReadUshort();
 
                 // Current position
-                var pos = (int)rf.FilePointer;
+                var pos = (int)sr.CurrentPosition;
 
                 // Seek string position
-                rf.Seek(tl.Offset + storageOffset + offset);
+                sr.Seek(tl.Offset + storageOffset + offset);
 
                 string name;
                 if (platform == FontNamePlatform.Unicode || (platform == FontNamePlatform.Macintosh && encodingID > 0) || platform == FontNamePlatform.Windows || (platform == FontNamePlatform.ISO && encodingID == 1))
                 {
                     // All string data for platform 3 (windows) must be encoded in UTF-16BE
                     // Platform = ISO, encoding id = 0 (7-bit ASCII), 1 = ISO 10646, 2 = ISO 8859-1
-                    name = rf.ReadUnicodeString(length);
+                    name = sr.ReadString(length, Encoding.BigEndianUnicode);
                 }
                 else
                 {
-                    name = rf.ReadString(length);
+                    name = sr.ReadString(length, Encoding1252);
                 }
 
                 // Back to previous reading position
-                rf.Seek(pos);
+                sr.Seek(pos);
 
                 names[k] = new FontName
                 {
@@ -670,16 +669,16 @@ namespace com.etsoo.EasyPdf.Fonts
 
         // The kerning table contains the values that control the inter-character spacing for the glyphs in a font
         // https://docs.microsoft.com/en-us/typography/opentype/spec/kern
-        private static Dictionary<int, float>? ParseKernTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf, int unitsPerEm)
+        private static Dictionary<int, float>? ParseKernTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr, int unitsPerEm)
         {
             if (!tables.TryGetValue("kern", out var tl))
                 return null;
 
             // Ignored version field
-            rf.Seek(tl.Offset + 2);
+            sr.Seek(tl.Offset + 2);
 
             // Number of subtables in the kerning table
-            var nTables = rf.ReadUnsignedShort();
+            var nTables = sr.ReadUshort();
 
             // subtables start position (version + nTables)
             var checkpoint = tl.Offset + 4;
@@ -693,40 +692,40 @@ namespace com.etsoo.EasyPdf.Fonts
             for (var k = 0; k < nTables; k++)
             {
                 checkpoint += length;
-                rf.Seek(checkpoint);
+                sr.Seek(checkpoint);
 
                 // Kerning subtables will share the same header format.
                 // This header is used to identify the format of the subtable and the kind of information it contains
 
                 // Ignored Kern subtable version number
-                rf.SkipBytes(2);
+                sr.Skip(2);
 
                 // Length of the subtable, in bytes (including this header)
-                length = rf.ReadUnsignedShort();
+                length = sr.ReadUshort();
 
                 // What type of information is contained in this table
-                var coverage = rf.ReadUnsignedShort();
+                var coverage = sr.ReadUshort();
 
                 if ((coverage & 0xfff7) == 0x0001)
                 {
                     // Format 0 is the only subtable format supported by Windows
 
                     // This gives the number of kerning pairs in the table
-                    var nPairs = rf.ReadUnsignedShort();
+                    var nPairs = sr.ReadUshort();
 
                     // Ignored searchRange, entrySelector, and rangeShift fields (2 x 3)
-                    rf.SkipBytes(6);
+                    sr.Skip(6);
 
                     for (var j = 0; j < nPairs; ++j)
                     {
                         // The glyph index for the left-hand and right-hand glyph in the kerning pair
                         // Read left and right fields at the same time
-                        var pair = rf.ReadInt();
+                        var pair = sr.ReadInt();
 
                         // The kerning value for the above pair, in FUnits
                         //  If this value is greater than zero, the characters will be moved apart.
                         //  If this value is less than zero, the character will be moved closer together
-                        var value = rf.ReadShort() * 1000f / unitsPerEm;
+                        var value = sr.ReadShort() * 1000f / unitsPerEm;
                         kern[pair] = value;
                     }
                 }
@@ -738,49 +737,49 @@ namespace com.etsoo.EasyPdf.Fonts
         // cmap - Character to Glyph Index Mapping Table
         // It may contain more than one subtable, in order to support more than one character encoding scheme
         // https://docs.microsoft.com/en-us/typography/opentype/spec/cmap
-        private static CMapFormat[] ParseCMapTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf)
+        private static CMapFormat[] ParseCMapTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr)
         {
             if (!tables.TryGetValue("cmap", out var tl))
             {
                 throw new Exception($"Table 'cmap' does not exist");
             }
 
-            rf.Seek(tl.Offset);
+            sr.Seek(tl.Offset);
 
             // Ignored version field
-            rf.SkipBytes(2);
+            sr.Skip(2);
 
             // All formats
             var formats = new List<CMapFormat>();
 
             // The table header indicates the character encodings for which subtables are present
-            var numTables = rf.ReadUnsignedShort();
+            var numTables = sr.ReadUshort();
             for (var k = 0; k < numTables; k++)
             {
-                var platform = GetPlatform(rf.ReadUnsignedShort());
-                var encodingID = rf.ReadUnsignedShort();
-                var offset = rf.ReadInt();
+                var platform = GetPlatform(sr.ReadUshort());
+                var encodingID = sr.ReadUshort();
+                var offset = sr.ReadInt();
 
                 // Current position
-                var pos = rf.FilePointer;
+                var pos = sr.CurrentPosition;
 
-                rf.Seek(tl.Offset + offset);
+                sr.Seek(tl.Offset + offset);
 
-                var format = rf.ReadUnsignedShort();
+                var format = sr.ReadUshort();
 
                 if (format == 0)
                 {
                     // Ignored length field
-                    rf.SkipBytes(2);
+                    sr.Skip(2);
 
-                    var language = rf.ReadUnsignedShort();
+                    var language = sr.ReadUshort();
 
                     Dictionary<int, int> h0 = [];
                     for (var f = 0; f < 256; f++)
                     {
                         // An array that maps character codes to glyph index values
                         // index is character code, value is glyph id
-                        h0[f] = rf.ReadUnsignedByte();
+                        h0[f] = sr.ReadSbyte();
                     }
 
                     formats.Add(new CMapFormat
@@ -794,51 +793,51 @@ namespace com.etsoo.EasyPdf.Fonts
                 }
                 else if (format == 4)
                 {
-                    var length = rf.ReadUnsignedShort();
-                    var language = rf.ReadUnsignedShort();
+                    var length = sr.ReadUshort();
+                    var language = sr.ReadUshort();
 
                     // 2 × segCount
-                    var segCount = rf.ReadUnsignedShort() / 2;
+                    var segCount = sr.ReadUshort() / 2;
 
                     // Ignored searchRange, entrySelector, and rangeShift fields
-                    rf.SkipBytes(6);
+                    sr.Skip(6);
 
                     // End characterCode for each segment, last=0xFFFF
                     var endCode = new int[segCount];
                     for (var c = 0; c < segCount; c++)
                     {
-                        endCode[c] = rf.ReadUnsignedShort();
+                        endCode[c] = sr.ReadUshort();
                     }
 
                     // Ignored reservedPad field
-                    rf.SkipBytes(2);
+                    sr.Skip(2);
 
                     // Start character code for each segment
                     var startCode = new int[segCount];
                     for (var c = 0; c < segCount; c++)
                     {
-                        startCode[c] = rf.ReadUnsignedShort();
+                        startCode[c] = sr.ReadUshort();
                     }
 
                     // Delta for all character codes in segment
                     var idDelta = new int[segCount];
                     for (var c = 0; c < segCount; c++)
                     {
-                        idDelta[c] = rf.ReadUnsignedShort();
+                        idDelta[c] = sr.ReadUshort();
                     }
 
                     // idRangeOffsets - Offsets into glyphIdArray or 0
                     var idRO = new int[segCount];
                     for (var c = 0; c < segCount; c++)
                     {
-                        idRO[c] = rf.ReadUnsignedShort();
+                        idRO[c] = sr.ReadUshort();
                     }
 
                     // glyphIdArray
                     var glyphId = new int[length / 2 - 8 - segCount * 4];
                     for (var c = 0; c < glyphId.Length; c++)
                     {
-                        glyphId[c] = rf.ReadUnsignedShort();
+                        glyphId[c] = sr.ReadUshort();
                     }
 
                     Dictionary<int, int> h4 = [];
@@ -874,17 +873,17 @@ namespace com.etsoo.EasyPdf.Fonts
                 else if (format == 6)
                 {
                     // Ignored length field
-                    rf.SkipBytes(2);
+                    sr.Skip(2);
 
-                    var language = rf.ReadUnsignedShort();
-                    var firstCode = rf.ReadUnsignedShort();
-                    var entryCount = rf.ReadUnsignedShort();
+                    var language = sr.ReadUshort();
+                    var firstCode = sr.ReadUshort();
+                    var entryCount = sr.ReadUshort();
 
                     Dictionary<int, int> h6 = [];
 
                     for (var c = 0; c < entryCount; c++)
                     {
-                        h6[c + firstCode] = rf.ReadUnsignedShort();
+                        h6[c + firstCode] = sr.ReadUshort();
                     }
 
                     formats.Add(new CMapFormat
@@ -899,18 +898,18 @@ namespace com.etsoo.EasyPdf.Fonts
                 else if (format == 12)
                 {
                     // Ignored reserved(2) and length(4) fields
-                    rf.SkipBytes(6);
+                    sr.Skip(6);
 
-                    var language = rf.ReadUnsignedShort();
+                    var language = sr.ReadUshort();
 
                     Dictionary<int, int> h12 = [];
 
-                    var numGroups = rf.ReadInt();
+                    var numGroups = sr.ReadInt();
                     for (var c = 0; c < numGroups; c++)
                     {
-                        var startCharCode = rf.ReadInt();
-                        var endCharCode = rf.ReadInt();
-                        var startGlyphID = rf.ReadInt();
+                        var startCharCode = sr.ReadInt();
+                        var endCharCode = sr.ReadInt();
+                        var startGlyphID = sr.ReadInt();
                         for (var i = startCharCode; i <= endCharCode; i++)
                         {
                             h12[i] = startGlyphID;
@@ -929,20 +928,20 @@ namespace com.etsoo.EasyPdf.Fonts
                 }
 
                 // Back to previous position
-                rf.Seek(pos);
+                sr.Seek(pos);
             }
 
             return [.. formats];
         }
 
-        private static int[] ParseLocaTable(Dictionary<string, OffsetItem> tables, PdfRandomAccessFileOrArray rf, bool shortVersion)
+        private static int[] ParseLocaTable(Dictionary<string, OffsetItem> tables, PureStreamReader sr, bool shortVersion)
         {
             if (!tables.TryGetValue(LOCA, out var tl))
             {
                 throw new Exception($"Table '{LOCA}' does not exist");
             }
 
-            rf.Seek(tl.Offset);
+            sr.Seek(tl.Offset);
 
             int[] locaTable;
 
@@ -951,14 +950,14 @@ namespace com.etsoo.EasyPdf.Fonts
                 var entries = tl.Length / 2;
                 locaTable = new int[entries];
                 for (var k = 0; k < entries; ++k)
-                    locaTable[k] = rf.ReadUnsignedShort() * 2;
+                    locaTable[k] = sr.ReadUshort() * 2;
             }
             else
             {
                 var entries = tl.Length / 4;
                 locaTable = new int[entries];
                 for (var k = 0; k < entries; ++k)
-                    locaTable[k] = rf.ReadInt();
+                    locaTable[k] = sr.ReadInt();
             }
 
             return locaTable;

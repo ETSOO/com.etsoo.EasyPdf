@@ -36,7 +36,8 @@
 
   <ItemGroup>
     <PackageReference Include="com.etsoo.HtmlUtils" Version="1.0.30" />
-    <PackageReference Include="com.etsoo.PureIO" Version="1.0.20" />
+    <PackageReference Include="com.etsoo.ImageUtils" Version="1.0.47" />
+    <PackageReference Include="com.etsoo.PureIO" Version="1.0.27" />
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.2.2" />
     <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />

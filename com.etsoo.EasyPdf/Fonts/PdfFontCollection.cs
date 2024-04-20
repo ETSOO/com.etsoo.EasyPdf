@@ -1,5 +1,5 @@
 ﻿using com.etsoo.EasyPdf.Content;
-using com.etsoo.EasyPdf.Support;
+using com.etsoo.PureIO;
 
 namespace com.etsoo.EasyPdf.Fonts
 {
@@ -36,38 +36,38 @@ namespace com.etsoo.EasyPdf.Fonts
                 // File stream
                 await using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-                using var rf = new PdfRandomAccessFileOrArray(stream);
+                using var sr = new PureStreamReader(stream);
 
                 if (ttc)
                 {
                     // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#ttc-header
                     // ttcTag
-                    var mainTag = rf.ReadString(4);
+                    var mainTag = sr.ReadString(4);
                     if (!mainTag.Equals("ttcf"))
                         throw new Exception($"{file} is not a valid ttc file");
 
                     // Ignored majorVersion, and minorVersion fields
-                    rf.SkipBytes(4);
+                    sr.Skip(4);
 
                     // Fonts under the family
-                    var numFonts = rf.ReadInt();
+                    var numFonts = sr.ReadUint();
 
                     // Array of offsets to the TableDirectory for each font from the beginning of the file
-                    var offsets = new int[numFonts];
+                    var offsets = new uint[numFonts];
                     for (var f = 0; f < numFonts; f++)
                     {
-                        offsets[f] = rf.ReadInt();
+                        offsets[f] = sr.ReadUint();
                     }
 
                     foreach (var offset in offsets)
                     {
-                        rf.Seek(offset);
-                        ParseFont(rf);
+                        sr.Seek(offset);
+                        ParseFont(sr);
                     }
                 }
                 else
                 {
-                    ParseFont(rf);
+                    ParseFont(sr);
                 }
             }
             catch
@@ -147,15 +147,15 @@ namespace com.etsoo.EasyPdf.Fonts
             return font;
         }
 
-        private void ParseFont(PdfRandomAccessFileOrArray rf)
+        private void ParseFont(PureStreamReader sr)
         {
             // sfntVersion
             // 0x00010000 or 0x4F54544F ('OTTO')
-            var ttId = rf.ReadInt();
+            var ttId = sr.ReadUint();
             if (ttId != 0x00010000 && ttId != 0x4F54544F)
                 throw new Exception($"The file is not a valid ttf or otf file");
 
-            var font = PdfBaseFont.Parse(rf);
+            var font = PdfBaseFont.Parse(sr);
             BaseFonts.Add(font);
         }
 

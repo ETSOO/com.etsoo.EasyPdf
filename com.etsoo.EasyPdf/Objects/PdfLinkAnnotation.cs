@@ -25,9 +25,9 @@ namespace com.etsoo.EasyPdf.Objects
             Border = new PdfArray(0, 0, 0);
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNameItem(nameof(A), A);
             Dic.AddNameItem(nameof(Dest), Dest);

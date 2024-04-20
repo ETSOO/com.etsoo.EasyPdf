@@ -1,6 +1,6 @@
 ﻿namespace com.etsoo.EasyPdf.Filters
 {
-    internal class ASCIIHexFilter : IFilter<FilterParams>
+    internal class ASCIIHexFilter : IFilter
     {
         private static byte EncodeByte(int b)
         {
@@ -13,13 +13,18 @@
         }
 
         /// <summary>
+        /// Name
+        /// 名称
+        /// </summary>
+        public string Name => "ASCIIHexDecode";
+
+        /// <summary>
         /// Encode data
         /// 编码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data, FilterParams? parameters = null)
+        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data)
         {
             var count = data.Length;
             Span<byte> bytes = new byte[2 * count];
@@ -33,13 +38,27 @@
         }
 
         /// <summary>
+        /// Async encode data
+        /// 异步编码数据
+        /// </summary>
+        /// <param name="data">Data</param>
+        /// <returns>Result</returns>
+        public async Task<ReadOnlyMemory<byte>> EncodeAsync(ReadOnlyMemory<byte> data)
+        {
+            await Task.CompletedTask;
+
+            var memory = new Memory<byte>();
+            Encode(data.Span).CopyTo(memory.Span);
+            return memory;
+        }
+
+        /// <summary>
         /// Decode data
         /// 解码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data, FilterParams? parameters = null)
+        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data)
         {
             var count = data.Length;
 

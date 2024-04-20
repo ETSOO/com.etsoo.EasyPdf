@@ -117,6 +117,21 @@ namespace com.etsoo.EasyPdf.Content
         public readonly static byte[] Q = [81, PdfConstants.LineFeedByte];
 
         /// <summary>
+        /// XObject do
+        /// 执行 XObject
+        /// </summary>
+        /// <param name="name">Reference name</param>
+        /// <returns>Bytes</returns>
+        public static byte[] Do(string name)
+        {
+            return
+            [
+                .. Encoding.ASCII.GetBytes($"/{name}"),
+                .. " Do\n"u8
+            ];
+        }
+
+        /// <summary>
         /// Rotate the coordinate system, clockwise
         /// </summary>
         /// <param name="angle">Angle</param>
@@ -261,6 +276,17 @@ namespace com.etsoo.EasyPdf.Content
                     PdfConstants.LineFeedByte
                 }
             ];
+        }
+
+        /// <summary>
+        /// Tm or cm
+        /// </summary>
+        /// <param name="point">Point</param>
+        /// <param name="cm">Is cm?</param>
+        /// <returns></returns>
+        public static byte[] Tm(Vector2 point, bool cm = false)
+        {
+            return Tm(1, 0, 0, 1, point.X, point.Y, cm);
         }
 
         /// <summary>

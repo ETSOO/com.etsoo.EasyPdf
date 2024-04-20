@@ -39,7 +39,10 @@ var w = await pdf.GetWriterAsync((page) =>
 
 // Paragraphs
 var p0 = new PdfParagraph();
-p0.Add(new PdfImage("D:\\etsoo.png"));
+var img = await PdfImage.LoadAsync("D:\\etsoo.png");
+img.Style.Height = 90;
+img.Style.Opacity = 0.3f;
+p0.Add(img);
 await w.WriteAsync(p0);
 
 var p1 = new PdfParagraph();
@@ -87,7 +90,7 @@ await w.WriteAsync(p6);
 
 var p7 = new PdfParagraph();
 p7.Style.SetFontSize(12).SetTextAlign(PdfTextAlign.End);
-p7.Add("欢迎访问 / Please visit ");
+p7.Add("欢迎访问 / Please visit ").Style.Opacity = 0.2f;
 p7.Add(new PdfLink("ETSOO Website", new Uri("https://www.etsoo.com"), "点击访问官方网站"));
 await w.WriteAsync(p7);
 

@@ -40,9 +40,9 @@ namespace com.etsoo.EasyPdf.Fonts
             FontName = fontName;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNames(nameof(FontName), FontName);
             Dic.AddNameBinary(nameof(FontFamily), FontFamily);

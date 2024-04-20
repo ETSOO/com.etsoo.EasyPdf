@@ -61,9 +61,9 @@ namespace com.etsoo.EasyPdf.Objects
             Kids = [];
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNameItem(nameof(Parent), Parent);
             Dic.AddNameArray(nameof(Kids), Kids.ToArray());

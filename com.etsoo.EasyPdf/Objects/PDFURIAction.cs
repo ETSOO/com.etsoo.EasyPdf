@@ -16,9 +16,9 @@
             URI = uri;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNameStr(nameof(URI), URI);
             Dic.AddNameBool(nameof(IsMap), IsMap);

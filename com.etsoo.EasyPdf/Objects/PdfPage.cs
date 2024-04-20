@@ -118,9 +118,9 @@ namespace com.etsoo.EasyPdf.Objects
             Style = style;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
             Dic.AddNameItem(nameof(Parent), ParentObj);
 
@@ -224,7 +224,7 @@ namespace com.etsoo.EasyPdf.Objects
         /// <returns>Bytes</returns>
         protected byte[] MovingOperator(Vector2 globalPoint, bool cm = true)
         {
-            return cm ? PdfOperator.Tm(1, 0, 0, 1, globalPoint.X, globalPoint.Y, cm) : PdfOperator.Td(globalPoint);
+            return cm ? PdfOperator.Tm(globalPoint, cm) : PdfOperator.Td(globalPoint);
         }
 
         /// <summary>

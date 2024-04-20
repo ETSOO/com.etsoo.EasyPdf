@@ -5,20 +5,10 @@ using System.Text;
 namespace com.etsoo.EasyPdf.Objects
 {
     /// <summary>
-    /// PDF stream filter
-    /// PDF 流过滤器
-    /// </summary>
-    public enum PdfStreamFilter
-    {
-        None,
-        FlateDecode
-    }
-
-    /// <summary>
     /// PDF stream dictionary
     /// PDF 流字典
     /// </summary>
-    public class PdfStreamDic : PdfObjectDic
+    internal class PdfStreamDic : PdfObjectDic
     {
         /// <summary>
         /// stream bytes
@@ -34,13 +24,13 @@ namespace com.etsoo.EasyPdf.Objects
         /// Stream bytes
         /// 流字节
         /// </summary>
-        protected ReadOnlyMemory<byte> Bytes { get; }
+        protected ReadOnlyMemory<byte> Bytes { get; private set; }
 
         /// <summary>
-        /// Encode/decode filter
+        /// Encode/decode filters
         /// 编码/解码过滤器
         /// </summary>
-        public PdfStreamFilter? Filter { get; set; }
+        public IFilter[]? Filters { get; set; }
 
         /// <summary>
         /// Constructor
@@ -50,12 +40,6 @@ namespace com.etsoo.EasyPdf.Objects
         public PdfStreamDic(ReadOnlyMemory<byte> bytes) : base()
         {
             Bytes = bytes;
-
-            // Add the length property
-            Dic.AddNameItem("Length", new PdfInt(Bytes.Length));
-
-            // Set the default filter
-            Filter ??= (PdfDocument.Debug ? PdfStreamFilter.None : PdfStreamFilter.FlateDecode);
         }
 
         /// <summary>
@@ -79,12 +63,35 @@ namespace com.etsoo.EasyPdf.Objects
             Bytes = bytes;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
-            if (Filter != PdfStreamFilter.None)
-                Dic.AddNames(nameof(Filter), Filter.ToString());
+            // Set the default filter
+            if (!PdfDocument.Debug)
+            {
+                Filters ??= [new FlateFilter()];
+            }
+
+            if (Filters?.Length > 0)
+            {
+                if (Filters.Length == 1)
+                {
+                    Dic.AddNames("Filter", Filters[0].Name);
+                }
+                else
+                {
+                    Dic.AddNameArray("Filter", Filters.Select(f => new PdfName(f.Name)));
+                }
+
+                foreach (var filter in Filters)
+                {
+                    Bytes = await filter.EncodeAsync(Bytes);
+                }
+            }
+
+            // Add the length property
+            Dic.AddNameItem("Length", new PdfInt(Bytes.Length));
         }
 
         protected override async Task WriteOthersAsync(Stream stream)
@@ -96,17 +103,8 @@ namespace com.etsoo.EasyPdf.Objects
             await stream.WriteAsync(streamBytes);
             stream.WriteByte(PdfConstants.LineFeedByte);
 
-            if (Filter == PdfStreamFilter.FlateDecode)
-            {
-                var filter = new FlateFilter();
-                await using var result = await filter.EncodeAsync(Bytes);
-                result.Position = 0;
-                await result.CopyToAsync(stream);
-            }
-            else
-            {
-                await stream.WriteAsync(Bytes);
-            }
+            // Write bytes to the stream
+            await stream.WriteAsync(Bytes);
 
             stream.WriteByte(PdfConstants.LineFeedByte);
             await stream.WriteAsync(endstreamBytes);

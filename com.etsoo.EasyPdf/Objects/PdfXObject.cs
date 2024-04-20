@@ -8,18 +8,18 @@
     {
         public override string Type => "XObject";
 
-        public readonly string SubType;
+        public readonly string Subtype;
 
-        public PdfXObject(string subType, ReadOnlyMemory<byte> bytes) : base(bytes)
+        public PdfXObject(string subtype, ReadOnlyMemory<byte> bytes) : base(bytes)
         {
-            SubType = subType;
+            Subtype = subtype;
         }
 
-        protected override void AddItems()
+        protected override async Task AddItemsAsync()
         {
-            base.AddItems();
+            await base.AddItemsAsync();
 
-            Dic.AddNames(nameof(SubType), SubType);
+            Dic.AddNames(nameof(Subtype), Subtype);
         }
     }
 }

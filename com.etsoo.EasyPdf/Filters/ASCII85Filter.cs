@@ -8,8 +8,14 @@ namespace com.etsoo.EasyPdf.Filters
     /// Remove ASCII-85 – An older style encoding which allowed early PDF files to be transferred and stored on systems which used 7 bit ASCII.
     /// This type of encoding is no longer necessary and actually expands the size of the content streams
     /// </summary>
-    internal class ASCII85Filter : IFilter<FilterParams>
+    internal class ASCII85Filter : IFilter
     {
+        /// <summary>
+        /// Name
+        /// 名称
+        /// </summary>
+        public string Name => "ASCII85Decode";
+
         /// <summary>
         /// Encode data
         /// 编码数据
@@ -17,7 +23,7 @@ namespace com.etsoo.EasyPdf.Filters
         /// <param name="data">Data</param>
         /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data, FilterParams? parameters = null)
+        public ReadOnlySpan<byte> Encode(ReadOnlySpan<byte> data)
         {
             var length = data.Length;
             var words = length / 4;
@@ -105,13 +111,27 @@ namespace com.etsoo.EasyPdf.Filters
         }
 
         /// <summary>
+        /// Async encode data
+        /// 异步编码数据
+        /// </summary>
+        /// <param name="data">Data</param>
+        /// <returns>Result</returns>
+        public async Task<ReadOnlyMemory<byte>> EncodeAsync(ReadOnlyMemory<byte> data)
+        {
+            await Task.CompletedTask;
+
+            var memory = new Memory<byte>();
+            Encode(data.Span).CopyTo(memory.Span);
+            return memory;
+        }
+
+        /// <summary>
         /// Decode data
         /// 解码数据
         /// </summary>
         /// <param name="data">Data</param>
-        /// <param name="parameters">Parameters</param>
         /// <returns>Result</returns>
-        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data, FilterParams? parameters = null)
+        public ReadOnlySpan<byte> Decode(ReadOnlySpan<byte> data)
         {
             // Remove all white-space characters
             var pos = data.IndexOfAny(PdfConstants.WhiteSpaceCharacters);
