@@ -1,6 +1,7 @@
 ﻿using com.etsoo.EasyPdf.Fonts;
 using com.etsoo.EasyPdf.Objects;
 using com.etsoo.EasyPdf.Support;
+using System.Buffers;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -36,9 +37,19 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="type">Chunk type</param>
         public PdfTextChunk(ReadOnlySpan<char> content, PdfChunkType type = PdfChunkType.Text) : base(type)
         {
-            Memory<char> cache = new char[content.Length];
-            content.CopyTo(cache.Span);
-            Content = cache;
+            var wr = new ArrayBufferWriter<char>();
+
+            foreach (var c in content)
+            {
+                if (c is '\r' or '\n')
+                {
+                    continue;
+                }
+
+                wr.Write([c]);
+            }
+
+            Content = wr.WrittenMemory;
         }
 
         public override Task CalculatePositionAsync(IPdfPage page, PdfBlockLine line, PdfBlockLineChunk chunk)
@@ -136,10 +147,10 @@ namespace com.etsoo.EasyPdf.Content
             LineHeight ??= lineHeight;
 
             // Letter spacing
-            var letterSpacing = style.LetterSpacing.GetValueOrDefault().PxToPt();
+            var letterSpacing = style.LetterSpacing.GetValueOrDefault();
 
             // Word spacing
-            var wordSpacing = style.WordSpacing.GetValueOrDefault().PxToPt();
+            var wordSpacing = style.WordSpacing.GetValueOrDefault();
 
             // Set styles
             var styleBytes = font.SetupStyle(style, out var fakeStyle);
@@ -254,7 +265,7 @@ namespace com.etsoo.EasyPdf.Content
 
                         // Reset
                         lastBlankIndex = 0;
-                        point.X = 0;
+                        point.X = rect.X;
 
                         // Distinguish the new line follwing same style or a new style line starts
                         List<byte[]> newOperators = [];
@@ -265,11 +276,11 @@ namespace com.etsoo.EasyPdf.Content
                             CompleteChunk(chunk);
 
                             isSequence = false;
-                            newOperators = operators;
+                            newOperators = operators.Clone();
                         }
 
                         // New line
-                        var newLine = new PdfBlockLine();
+                        var newLine = new PdfBlockLine(line.Index + 1);
                         chunk = new PdfBlockLineChunk(font, lineHeight, point.ToVector2(), isSequence)
                         {
                             Owner = this,

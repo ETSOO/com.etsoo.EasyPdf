@@ -11,8 +11,8 @@ namespace com.etsoo.EasyPdf.Content
     /// </summary>
     public enum PdfChunkType
     {
-        HR,
         Link,
+        LineBreak,
         Image,
         Subscript,
         Superscript,
@@ -106,10 +106,10 @@ namespace com.etsoo.EasyPdf.Content
             }
 
             // Margin left
-            var marginLeft = (style.Margin?.Left ?? 0).PxToPt();
+            var marginLeft = style.Margin?.Left ?? 0;
 
             // Margin right
-            var marginRight = (style.Margin?.Right ?? 0).PxToPt();
+            var marginRight = style.Margin?.Right ?? 0;
 
             // Start point
             StartPoint = point.ToVector2();

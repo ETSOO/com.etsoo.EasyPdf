@@ -254,11 +254,8 @@ namespace com.etsoo.EasyPdf.Fonts
         {
             get
             {
-                if (uniqueIdentifier == null)
-                {
-                    uniqueIdentifier = Names.FirstOrDefault(n => n.NameId == FontNameId.UniqueIdentifier)?.Name
+                uniqueIdentifier ??= Names.FirstOrDefault(n => n.NameId == FontNameId.UniqueIdentifier)?.Name
                         ?? Names.First(n => n.NameId == FontNameId.FullName).Name;
-                }
                 return uniqueIdentifier;
             }
         }
@@ -269,11 +266,8 @@ namespace com.etsoo.EasyPdf.Fonts
         {
             get
             {
-                if (postscriptName == null)
-                {
-                    postscriptName = Names.FirstOrDefault(n => n.NameId == FontNameId.PostScriptName)?.Name
+                postscriptName ??= Names.FirstOrDefault(n => n.NameId == FontNameId.PostScriptName)?.Name
                         ?? Names.First(n => n.NameId == FontNameId.FullName).Name;
-                }
 
                 return postscriptName;
             }
@@ -792,10 +786,7 @@ namespace com.etsoo.EasyPdf.Fonts
         {
             // Font name
             var fontName = Cff == null ? Names.FirstOrDefault(n => n.NameId == FontNameId.PostScriptCID)?.Name : null;
-            if (fontName == null)
-            {
-                fontName = CreateSubsetPrefix() + PostScriptName;
-            }
+            fontName ??= CreateSubsetPrefix() + PostScriptName;
 
             // Font subset
             if (streamRef == null)

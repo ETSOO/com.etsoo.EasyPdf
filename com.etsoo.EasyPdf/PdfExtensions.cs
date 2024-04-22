@@ -14,6 +14,22 @@ namespace com.etsoo.EasyPdf
     internal static class PdfExtensions
     {
         /// <summary>
+        /// Clone list of bytes
+        /// 克隆字节列表
+        /// </summary>
+        /// <param name="source">Source list</param>
+        /// <returns>Result</returns>
+        public static List<byte[]> Clone(this List<byte[]> source)
+        {
+            var result = new List<byte[]>();
+            foreach (var item in source)
+            {
+                result.Add([.. item]);
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Is binary check bytes
         /// 是否为二进制检查字节
         /// </summary>
@@ -374,29 +390,6 @@ namespace com.etsoo.EasyPdf
             }
 
             return writer.WrittenMemory;
-        }
-
-        /// <summary>
-        /// Pixels to points
-        /// 像素到英寸
-        /// </summary>
-        /// <param name="px">Pixel</param>
-        /// <returns>Inches</returns>
-        public static float PxToPt(this float px)
-        {
-            // 1px = 0.75pt
-            return px * 0.75F;
-        }
-
-        /// <summary>
-        /// Pixels to points
-        /// 像素到英寸
-        /// </summary>
-        /// <param name="px">Pixel</param>
-        /// <returns>Inches</returns>
-        public static float PxToPt(this int px)
-        {
-            return PxToPt((float)px);
         }
 
         /// <summary>

@@ -4,8 +4,8 @@ using System.Drawing;
 namespace com.etsoo.EasyPdf.Content
 {
     /// <summary>
-    /// PDF style, all length units are in pixels
-    /// PDF 样式，所有长度单位均为像素
+    /// PDF style, all length units are in points (pt)
+    /// PDF 样式，所有长度单位为点（pt）
     /// </summary>
     /// <remarks>
     /// Constructor
@@ -14,14 +14,11 @@ namespace com.etsoo.EasyPdf.Content
     /// <param name="parent">Parent style</param>
     public class PdfStyle(PdfStyle? parent = null)
     {
-        public const string PositonAbsolte = "absolute";
-        public const string PositonRelative = "relative";
-
         /// <summary>
         /// Parent style
         /// 父样式
         /// </summary>
-        public PdfStyle? Parent { get; set; } = parent;
+        internal PdfStyle? Parent { get; set; } = parent;
 
         /// <summary>
         /// Auto inherit
@@ -48,6 +45,18 @@ namespace com.etsoo.EasyPdf.Content
         }
 
         /// <summary>
+        /// Set background color
+        /// 设置背景颜色
+        /// </summary>
+        /// <param name="bgColor">Background color text</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBackgroundColor(string? bgColor)
+        {
+            BackgroundColor = string.IsNullOrEmpty(bgColor) ? null : PdfColor.Parse(bgColor);
+            return this;
+        }
+
+        /// <summary>
         /// Border
         /// 边框
         /// </summary>
@@ -66,6 +75,20 @@ namespace com.etsoo.EasyPdf.Content
         }
 
         /// <summary>
+        /// Set border
+        /// 设置边框
+        /// </summary>
+        /// <param name="color">Border color</param>
+        /// <param name="width">Width</param>
+        /// <param name="style">Style</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBorder(PdfColor color, int width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
+        {
+            Border = new PdfStyleBorder(color, width, style);
+            return this;
+        }
+
+        /// <summary>
         /// Color
         /// 颜色
         /// </summary>
@@ -80,6 +103,18 @@ namespace com.etsoo.EasyPdf.Content
         public PdfStyle SetColor(PdfColor? color)
         {
             Color = color;
+            return this;
+        }
+
+        /// <summary>
+        /// Set color
+        /// 设置颜色
+        /// </summary>
+        /// <param name="color">Color text</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetColor(string? color)
+        {
+            Color = string.IsNullOrEmpty(color) ? null : PdfColor.Parse(color);
             return this;
         }
 
@@ -213,7 +248,7 @@ namespace com.etsoo.EasyPdf.Content
         /// Margin
         /// 外延距离
         /// </summary>
-        public PdfStyleSpace Margin { get; set; } = new PdfStyleSpace(0);
+        public PdfStyleSpace? Margin { get; set; }
 
         /// <summary>
         /// Set margin
@@ -221,17 +256,40 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="margin">Margin</param>
         /// <returns>Style</returns>
-        public PdfStyle SetMargin(PdfStyleSpace margin)
+        public PdfStyle SetMargin(PdfStyleSpace? margin)
         {
             Margin = margin;
             return this;
         }
 
         /// <summary>
+        /// Set margin
+        /// 设置外延距离
+        /// </summary>
+        /// <param name="space">Margin space</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetMargin(float space)
+        {
+            return SetMargin(new PdfStyleSpace(space));
+        }
+
+        /// <summary>
+        /// Set margin
+        /// 设置外延距离
+        /// </summary>
+        /// <param name="vertical">Vertical space</param>
+        /// <param name="horizontal">Horizontal space</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetMargin(float vertical, float horizontal)
+        {
+            return SetMargin(new PdfStyleSpace(vertical, horizontal));
+        }
+
+        /// <summary>
         /// Padding
         /// 填充距离
         /// </summary>
-        public PdfStyleSpace Padding { get; set; } = new PdfStyleSpace(0);
+        public PdfStyleSpace? Padding { get; set; }
 
         /// <summary>
         /// Set padding
@@ -239,17 +297,40 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="padding">Padding</param>
         /// <returns>Style</returns>
-        public PdfStyle SetPadding(PdfStyleSpace padding)
+        public PdfStyle SetPadding(PdfStyleSpace? padding)
         {
             Padding = padding;
             return this;
         }
 
         /// <summary>
+        /// Set padding
+        /// 设置填充距离
+        /// </summary>
+        /// <param name="space">Margin space</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetPadding(float space)
+        {
+            return SetPadding(new PdfStyleSpace(space));
+        }
+
+        /// <summary>
+        /// Set padding
+        /// 设置填充距离
+        /// </summary>
+        /// <param name="vertical">Vertical space</param>
+        /// <param name="horizontal">Horizontal space</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetPadding(float vertical, float horizontal)
+        {
+            return SetPadding(new PdfStyleSpace(vertical, horizontal));
+        }
+
+        /// <summary>
         /// Position
         /// 位置
         /// </summary>
-        public string? Position { get; set; }
+        public PdfPosition? Position { get; set; }
 
         /// <summary>
         /// Set position
@@ -257,7 +338,7 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         /// <param name="position">Position</param>
         /// <returns>Style</returns>
-        public PdfStyle SetPosition(string? position)
+        public PdfStyle SetPosition(PdfPosition? position)
         {
             Position = position;
             return this;
@@ -337,6 +418,18 @@ namespace com.etsoo.EasyPdf.Content
         public PdfStyle SetTextDecoration(PdfTextDecoration? textDecoration)
         {
             TextDecoration = textDecoration;
+            return this;
+        }
+
+        /// <summary>
+        /// Set text decoration
+        /// 设置文字修饰
+        /// </summary>
+        /// <param name="kind">Decoreation kind</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetTextDecoration(PdfLineKind kind)
+        {
+            TextDecoration = new PdfTextDecoration(kind, Color.GetValueOrDefault());
             return this;
         }
 
@@ -460,37 +553,48 @@ namespace com.etsoo.EasyPdf.Content
         /// <returns>Result</returns>
         public float GetLineHeight(float fontLineHeight)
         {
-            return LineHeight?.PxToPt() ?? fontLineHeight;
+            return LineHeight ?? fontLineHeight;
         }
 
         /// <summary>
         /// Get rectangle
         /// 获取矩形
         /// </summary>
-        /// <param name="size">Default size</param>
+        /// <param name="size">Container size</param>
         /// <param name="point">Start point inside the rectangle</param>
         /// <returns>Result</returns>
-        public RectangleF GetRectangle(SizeF? size = null, PdfPoint? point = null)
+        public (RectangleF layout, RectangleF rect) GetRectangle(SizeF? size = null, PdfPoint? point = null)
         {
-            var width = Width?.PxToPt() ?? size?.Width ?? 0;
-            var height = Height?.PxToPt() ?? size?.Height ?? 0;
+            var width = Width ?? size?.Width ?? 0;
+            var height = Height ?? size?.Height ?? 0;
 
-            var marginLeft = Margin?.Left.PxToPt() ?? 0;
-            var marginTop = Margin?.Top.PxToPt() ?? 0;
+            var marginLeft = (Margin?.Left ?? 0) + (Border?.Left.Width ?? 0);
+            var marginTop = (Margin?.Top ?? 0) + (Border?.Top.Width ?? 0);
 
-            var marginRight = Margin?.Right.PxToPt() ?? 0;
-            var marginBottom = Margin?.Bottom.PxToPt() ?? 0;
+            var marginRight = (Margin?.Right ?? 0) + (Border?.Right.Width ?? 0);
+            var marginBottom = (Margin?.Bottom ?? 0) + (Border?.Bottom.Width ?? 0);
+
+            var paddingLeft = Padding?.Left ?? 0;
+            var paddingTop = Padding?.Top ?? 0;
+            var paddingRight = Padding?.Right ?? 0;
+            var paddingBottom = Padding?.Bottom ?? 0;
 
             width -= marginLeft + marginRight;
             height -= marginTop + marginBottom;
 
             float left, top;
 
-            if (Position?.Equals(PositonAbsolte, StringComparison.OrdinalIgnoreCase) is true
-                || Position?.Equals(PositonRelative, StringComparison.OrdinalIgnoreCase) is true)
+            if (PdfPosition.Absolute.Equals(Position))
             {
                 left = Left.GetValueOrDefault() + marginLeft;
                 top = Top.GetValueOrDefault() + marginTop;
+            }
+            else if (PdfPosition.Relative.Equals(Position))
+            {
+                ArgumentNullException.ThrowIfNull(point);
+
+                left = point.X + Left.GetValueOrDefault() + marginLeft;
+                top = point.Y + Top.GetValueOrDefault() + marginTop;
             }
             else
             {
@@ -515,10 +619,31 @@ namespace com.etsoo.EasyPdf.Content
                 top += marginTop;
             }
 
-            return new RectangleF(left, top, width, height);
+            var rectLayout = new RectangleF(left, top, width, height);
+
+            width -= paddingLeft + paddingRight;
+            height -= paddingTop + paddingBottom;
+            left += paddingLeft;
+            top += paddingTop;
+
+            if (point != null)
+            {
+                point.X += paddingLeft;
+                point.Y += paddingTop;
+            }
+
+            return (rectLayout, new RectangleF(left, top, width, height));
         }
 
-        public (int width, int height) GetSize(float sourceWidth, float sourceHeight, System.Drawing.RectangleF rect)
+        /// <summary>
+        /// Get display size
+        /// 获取显示尺寸
+        /// </summary>
+        /// <param name="sourceWidth">Source width</param>
+        /// <param name="sourceHeight">Source height</param>
+        /// <param name="rect">Target display rectangle</param>
+        /// <returns>Result</returns>
+        public (int width, int height) GetSize(float sourceWidth, float sourceHeight, RectangleF rect)
         {
             var cssWidth = Width;
             var cssHeight = Height;
@@ -528,11 +653,11 @@ namespace com.etsoo.EasyPdf.Content
             var ratio = sourceWidth / sourceHeight;
             if (cssWidth.HasValue)
             {
-                width = (int)cssWidth.Value.PxToPt();
+                width = (int)cssWidth.Value;
 
                 if (cssHeight.HasValue)
                 {
-                    height = (int)cssHeight.Value.PxToPt();
+                    height = (int)cssHeight.Value;
                 }
                 else
                 {
@@ -543,7 +668,7 @@ namespace com.etsoo.EasyPdf.Content
             {
                 if (cssHeight.HasValue)
                 {
-                    height = (int)cssHeight.Value.PxToPt();
+                    height = (int)cssHeight.Value;
                     width = (int)(height * ratio);
                 }
                 else

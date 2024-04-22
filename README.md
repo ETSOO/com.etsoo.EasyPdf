@@ -11,7 +11,7 @@ We were very confused about whether to reinvent the wheel (have learned a lot fr
 - Based on PDF 1.7 standards.
 - The library is licensed under MIT and permanently free.
 - Following HTML5 layout ideas, can easily generate PDF file from HTML content.
-- The output file size is as small as possible.
+- The output file size is as small as possible (example file below is 163KB).
 - Keep the code simple, easy to read and understood.
 
 # Milestones

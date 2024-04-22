@@ -185,10 +185,10 @@ namespace com.etsoo.EasyPdf.Objects
 
         private RectangleF GetPageRectangle(RectangleF docRect, PdfStyle style)
         {
-            var adjustLeft = ((style.Padding?.Left ?? 0) + (style.Border?.Left?.Width ?? 0)).PxToPt();
-            var adjustTop = ((style.Padding?.Top ?? 0) + (style.Border?.Top?.Width ?? 0)).PxToPt();
-            var adjustRight = ((style.Padding?.Right ?? 0) + (style.Border?.Right?.Width ?? 0)).PxToPt();
-            var adjustBottom = ((style.Padding?.Bottom ?? 0) + (style.Border?.Bottom?.Width ?? 0)).PxToPt();
+            var adjustLeft = (style.Padding?.Left ?? 0) + (style.Border?.Left?.Width ?? 0);
+            var adjustTop = (style.Padding?.Top ?? 0) + (style.Border?.Top?.Width ?? 0);
+            var adjustRight = (style.Padding?.Right ?? 0) + (style.Border?.Right?.Width ?? 0);
+            var adjustBottom = (style.Padding?.Bottom ?? 0) + (style.Border?.Bottom?.Width ?? 0);
 
             var x = docRect.X + adjustLeft;
             var y = docRect.Y + adjustBottom; // PDF coordinate is bottom to top
@@ -271,7 +271,7 @@ namespace com.etsoo.EasyPdf.Objects
             var doc = writer.Document;
 
             // Document rectangle, based on page size
-            var docRect = doc.Style.GetRectangle(Data.PageSize);
+            var (docRect, _) = doc.Style.GetRectangle(Data.PageSize);
 
             // Document border & background
             await WriteBorderAndBackgroundAsync(doc.Style, docRect);
@@ -337,8 +337,136 @@ namespace com.etsoo.EasyPdf.Objects
         /// <returns>Task</returns>
         public async Task WriteAsync(PdfBlock block, PdfWriter writer)
         {
-            block.Style.Parent = Style;
+            var fontSize = Style.FontSize ?? Style.Parent?.FontSize ?? 12;
+            block.SetParentStyle(Style, fontSize);
             await block.WriteAsync(this, writer);
+        }
+
+        /// <summary>
+        /// Write background
+        /// 输出背景
+        /// </summary>
+        /// <param name="bgcolor">Background color</param>
+        /// <param name="rect">Rectangle</param>
+        /// <returns>Task</returns>
+        public async Task WriteBackgroundAsync(PdfColor bgcolor, RectangleF rect)
+        {
+            // Save graphics state
+            await SaveStateAsync();
+
+            await Stream.WriteAsync(PdfOperator.RG2(bgcolor));
+            await Stream.WriteAsync(PdfOperator.Zw(0));
+            await Stream.WriteAsync(PdfOperator.Zre(rect));
+            await Stream.WriteAsync(PdfOperator.B);
+
+            // Restore graphics state
+            await RestoreStateAsync();
+        }
+
+        /// <summary>
+        /// Write border
+        /// 输出边框
+        /// </summary>
+        /// <param name="border">Border style</param>
+        /// <param name="rect">Rectangle</param>
+        /// <returns>Task</returns>
+        public async Task WriteBorderAsync(PdfStyleBorder border, RectangleF rect)
+        {
+            // Save graphics state
+            await SaveStateAsync();
+
+            if (border.SameStyle)
+            {
+                // Reduce operators for simple style
+                var width = border.Left.Width;
+                var widthHalf = width / 2.0F;
+                rect.Inflate(-widthHalf, -widthHalf);
+
+                await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
+                await Stream.WriteAsync(PdfOperator.Zw(width));
+                await Stream.WriteAsync(PdfOperator.Zre(rect));
+                await Stream.WriteAsync(PdfOperator.S);
+            }
+            else
+            {
+                var leftWidth = border.Left.Width;
+                var leftWidthHalf = leftWidth / 2.0F;
+
+                var topWidth = border.Top.Width;
+                var topWidthHalf = topWidth / 2.0F;
+
+                var rightWidth = border.Right.Width;
+                var rightWidthHalf = rightWidth / 2.0F;
+
+                var bottomWidth = border.Bottom.Width;
+                var bottomWidthHalf = bottomWidth / 2.0F;
+
+                // Extended half width
+                float fx, fy, tx, ty;
+
+                if (leftWidth > 0)
+                {
+                    fx = rect.X - leftWidthHalf;
+                    fy = rect.Y - bottomWidth;
+
+                    tx = fx;
+                    ty = rect.Y + rect.Height + topWidth;
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(leftWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
+                    await Stream.WriteAsync(PdfOperator.S);
+                }
+
+                if (topWidth > 0)
+                {
+                    fx = rect.X - leftWidth;
+                    fy = rect.Y + rect.Height + topWidthHalf;
+
+                    tx = rect.X + rect.Width + rightWidth;
+                    ty = fy;
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Top.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(topWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
+                    await Stream.WriteAsync(PdfOperator.S);
+                }
+
+                if (rightWidth > 0)
+                {
+                    fx = rect.X + rect.Width + rightWidthHalf;
+                    fy = rect.Y + rect.Height + topWidth;
+
+                    tx = fx;
+                    ty = rect.Y - bottomWidth;
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Right.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(rightWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
+                    await Stream.WriteAsync(PdfOperator.S);
+                }
+
+                if (bottomWidth > 0)
+                {
+                    fx = rect.X + rect.Width + rightWidth;
+                    fy = rect.Y - bottomWidthHalf;
+
+                    tx = rect.X - leftWidth;
+                    ty = fy;
+
+                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
+                    await Stream.WriteAsync(PdfOperator.RG(border.Bottom.Color));
+                    await Stream.WriteAsync(PdfOperator.Zw(bottomWidth));
+                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
+                    await Stream.WriteAsync(PdfOperator.S);
+                }
+            }
+
+            // Restore graphics state
+            await RestoreStateAsync();
         }
 
         /// <summary>
@@ -350,81 +478,16 @@ namespace com.etsoo.EasyPdf.Objects
         /// <returns>Task</returns>
         public async ValueTask WriteBorderAndBackgroundAsync(PdfStyle style, RectangleF rect)
         {
-            // Background color
             var bgcolor = style.BackgroundColor;
             if (bgcolor.HasValue)
             {
-                // Save graphics state
-                await SaveStateAsync();
-
-                await Stream.WriteAsync(PdfOperator.RG2(bgcolor.Value));
-                await Stream.WriteAsync(PdfOperator.Zw(0));
-                await Stream.WriteAsync(PdfOperator.Zre(rect));
-                await Stream.WriteAsync(PdfOperator.B);
-
-                // Restore graphics state
-                await RestoreStateAsync();
+                await WriteBackgroundAsync(bgcolor.Value, rect);
             }
 
             var border = style.Border;
             if (border?.HasBorder is true)
             {
-                // Save graphics state
-                await SaveStateAsync();
-
-                if (border.SameStyle)
-                {
-                    // Reduce operators for simple style
-                    var width = border.Left.Width.PxToPt();
-                    var widthHalf = width / 2.0F;
-                    rect.Inflate(-widthHalf, -widthHalf);
-
-                    await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(width));
-                    await Stream.WriteAsync(PdfOperator.Zre(rect));
-                    await Stream.WriteAsync(PdfOperator.S);
-                }
-                else
-                {
-                    var leftWidth = border.Left.Width.PxToPt();
-                    var leftWidthHalf = leftWidth / 2.0F;
-
-                    var topWidth = border.Top.Width.PxToPt();
-                    var topWidthHalf = topWidth / 2.0F;
-
-                    var rightWidth = border.Right.Width.PxToPt();
-                    var rightWidthHalf = rightWidth / 2.0F;
-
-                    var bottomWidth = border.Bottom.Width.PxToPt();
-                    var bottomWidthHalf = bottomWidth / 2.0F;
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X + leftWidthHalf, rect.Y)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(leftWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X + leftWidthHalf, rect.Y + rect.Height)));
-                    await Stream.WriteAsync(PdfOperator.S);
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X, rect.Y + rect.Height - topWidthHalf)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Top.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(topWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X + rect.Width, rect.Y + rect.Height - topWidthHalf)));
-                    await Stream.WriteAsync(PdfOperator.S);
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X + rect.Width - rightWidthHalf, rect.Y + rect.Height)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Right.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(rightWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X + rect.Width - rightWidthHalf, rect.Y)));
-                    await Stream.WriteAsync(PdfOperator.S);
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(rect.X + rect.Width, rect.Y + bottomWidthHalf)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Bottom.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(bottomWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(rect.X, rect.Y + bottomWidthHalf)));
-                    await Stream.WriteAsync(PdfOperator.S);
-                }
-
-                // Restore graphics state
-                await RestoreStateAsync();
+                await WriteBorderAsync(border, rect);
             }
         }
 

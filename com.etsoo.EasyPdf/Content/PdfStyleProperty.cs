@@ -1,6 +1,18 @@
 ﻿namespace com.etsoo.EasyPdf.Content
 {
     /// <summary>
+    /// PDF position style
+    /// https://developer.mozilla.org/en-US/docs/Web/CSS/position
+    /// PDF 位置样式
+    /// </summary>
+    public enum PdfPosition
+    {
+        Static,
+        Relative,
+        Absolute
+    }
+
+    /// <summary>
     /// PDF line style
     /// PDF 线条样式
     /// </summary>
@@ -101,6 +113,12 @@
     /// </summary>
     public record PdfStyleSpace
     {
+        /// <summary>
+        /// Zero space
+        /// 零空间
+        /// </summary>
+        public static PdfStyleSpace Zero { get; } = new(0);
+
         public float Left { get; set; }
         public float Top { get; set; }
         public float Right { get; set; }
@@ -230,13 +248,13 @@
             }
         }
 
-        public PdfStyleBorderSide Top { get; }
+        public PdfStyleBorderSide Top { get; internal set; }
 
-        public PdfStyleBorderSide Right { get; }
+        public PdfStyleBorderSide Right { get; internal set; }
 
-        public PdfStyleBorderSide Bottom { get; }
+        public PdfStyleBorderSide Bottom { get; internal set; }
 
-        public PdfStyleBorderSide Left { get; }
+        public PdfStyleBorderSide Left { get; internal set; }
 
         public PdfStyleSpace? Radius { get; set; }
 
@@ -251,6 +269,18 @@
             Right = new PdfStyleBorderSide(color, width, style);
             Bottom = new PdfStyleBorderSide(color, width, style);
             Left = new PdfStyleBorderSide(color, width, style);
+        }
+
+        public PdfStyleBorder DeepClone()
+        {
+            return new PdfStyleBorder(Color, Width, Style)
+            {
+                Top = Top with { },
+                Right = Right with { },
+                Bottom = Bottom with { },
+                Left = Left with { },
+                Radius = Radius
+            };
         }
     }
 }

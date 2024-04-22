@@ -1,22 +1,21 @@
 ﻿using com.etsoo.EasyPdf.Objects;
+using com.etsoo.EasyPdf.Support;
 using System.Drawing;
 using System.Text;
 
 namespace com.etsoo.EasyPdf.Content
 {
     /// <summary>
-    /// PDF rich block
+    /// PDF rich block, like HTML div
     /// PDF 富文本块
     /// </summary>
-    public class PdfRichBlock : PdfBlock
+    public class PdfDiv : PdfBlock
     {
         /// <summary>
         /// All chunks
         /// 全部块
         /// </summary>
         private readonly List<PdfChunk> chunks = [];
-
-        private PdfBlockLine currentLine = new();
 
         /// <summary>
         /// Add chunk
@@ -52,29 +51,15 @@ namespace com.etsoo.EasyPdf.Content
             return chunk;
         }
 
-        /// <summary>
-        /// New line action
-        /// 新行动作
-        /// </summary>
-        /// <param name="page">Current page</param>
-        /// <param name="writer">Current writer</param>
-        /// <param name="style">Current style</param>
-        /// <param name="rect">Current rectangle</param>
-        /// <param name="line">Current completed line</param>
-        /// <param name="newLine">New line</param>
-        /// <returns></returns>
-        protected virtual async Task NewLineActionAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect, PdfBlockLine line, PdfBlockLine? newLine)
+        protected override async Task NewLineActionAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect, PdfBlockLine line, PdfBlockLine? newLine)
         {
             // Output previous line
-            await WriteLineAsync(line, page, writer, rect.Width, style);
+            await WriteLineAsync(line, page, writer, rect.Width, style, newLine);
 
-            // Update current line reference
-            // newLine is null means the line is the last one
-            if (newLine != null)
-                currentLine = newLine;
+            await base.NewLineActionAsync(page, writer, style, rect, line, newLine);
         }
 
-        protected override async ValueTask WriteInnerAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect)
+        protected override async ValueTask WriteInnerAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect, PdfPoint point)
         {
             var len = chunks.Count;
             if (len == 0)
@@ -82,8 +67,9 @@ namespace com.etsoo.EasyPdf.Content
                 return;
             }
 
-            // Margin
-            var margin = style.Margin;
+            // Margin & padding
+            var marginBottom = style.Margin?.Bottom ?? 0;
+            var paddingBottom = style.Padding?.Bottom ?? 0;
 
             // New line action
             Task action(PdfBlockLine line, PdfBlockLine? newLine) => NewLineActionAsync(page, writer, style, rect, line, newLine);
@@ -94,7 +80,7 @@ namespace com.etsoo.EasyPdf.Content
             {
                 chunk = chunks[c];
 
-                var completed = await chunk.WriteAsync(writer, rect, page.CurrentPoint, currentLine, action);
+                var completed = await chunk.WriteAsync(writer, rect, point, CurrentLine, action);
 
                 if (completed)
                 {
@@ -102,18 +88,18 @@ namespace com.etsoo.EasyPdf.Content
                 }
             }
 
-            if (!currentLine.Rendered)
+            if (!CurrentLine.Rendered)
             {
-                await action(currentLine, null);
+                await action(CurrentLine, null);
 
                 // Move to the beginning of the next line
-                page.CurrentPoint.X = 0;
-                page.CurrentPoint.Y += currentLine.Height;
+                point.X = rect.X;
+                point.Y += CurrentLine.Height;
             }
 
             if (c < len)
             {
-                var newBlock = new PdfRichBlock
+                var newBlock = new PdfDiv
                 {
                     Style = Style
                 };
@@ -130,11 +116,16 @@ namespace com.etsoo.EasyPdf.Content
             else
             {
                 // Move the margin bottom
-                page.CurrentPoint.Y += margin.Bottom;
+                base.AdjustBottom(point, style);
             }
         }
 
-        private async Task WriteLineAsync(PdfBlockLine line, IPdfPage page, PdfWriter writer, float width, PdfStyle style)
+        protected override void AdjustBottom(PdfPoint point, PdfStyle style)
+        {
+            // Ignore as done previously
+        }
+
+        protected async Task WriteLineAsync(PdfBlockLine line, IPdfPage page, PdfWriter writer, float width, PdfStyle style, PdfBlockLine? newLine)
         {
             var chunkCount = line.Chunks.Length;
             if (chunkCount == 0)
@@ -189,6 +180,8 @@ namespace com.etsoo.EasyPdf.Content
             // Line height
             var lineHeight = line.Height;
             var firstHeight = line.Chunks[0].Font?.LineHeight ?? line.Chunks[0].Height;
+            var firstLineAdjust = lineHeight - line.MaxFontHeight;
+            var lineActionDone = false;
 
             var chunkIndex = 0;
             PdfChunk? chunkObj = null;
@@ -210,8 +203,29 @@ namespace com.etsoo.EasyPdf.Content
                     chunkIndex = c;
                 }
 
+                var total = chunk.Chars.Count;
+
                 if (!chunk.IsSequence)
                 {
+                    if (total > 0 && line.First && firstLineAdjust > 0)
+                    {
+                        chunk.AdjustStartPoint(0, -firstLineAdjust);
+
+                        if (!lineActionDone)
+                        {
+                            if (newLine != null)
+                            {
+                                foreach (var newChunk in newLine.Chunks)
+                                {
+                                    newChunk.AdjustStartPoint(0, -firstLineAdjust);
+                                }
+                            }
+                            page.CurrentPoint.Y -= firstLineAdjust;
+
+                            lineActionDone = true;
+                        }
+                    }
+
                     await chunk.Owner.CalculatePositionAsync(page, line, chunk);
                 }
 
@@ -223,12 +237,11 @@ namespace com.etsoo.EasyPdf.Content
                     }
                 }
 
-                var total = chunk.Chars.Count;
                 if (total > 0 && chunk.Font != null)
                 {
                     // Chunk spacing
-                    var chunkLetterSpacing = chunk.Style.LetterSpacing.GetValueOrDefault().PxToPt() + letterSpacing;
-                    var chunkWordSpacing = chunk.Style.WordSpacing.GetValueOrDefault().PxToPt() + wordSpacing;
+                    var chunkLetterSpacing = chunk.Style.LetterSpacing.GetValueOrDefault() + letterSpacing;
+                    var chunkWordSpacing = chunk.Style.WordSpacing.GetValueOrDefault() + wordSpacing;
 
                     await page.Stream.WriteAsync(PdfOperator.Tc(chunkLetterSpacing));
 

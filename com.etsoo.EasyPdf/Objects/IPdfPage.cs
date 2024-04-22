@@ -132,6 +132,24 @@ namespace com.etsoo.EasyPdf.Objects
         void UpdatePoint(Vector2 point);
 
         /// <summary>
+        /// Write background
+        /// 输出背景
+        /// </summary>
+        /// <param name="bgcolor">Background color</param>
+        /// <param name="rect">Rectangle</param>
+        /// <returns>Task</returns>
+        Task WriteBackgroundAsync(PdfColor bgcolor, RectangleF rect);
+
+        /// <summary>
+        /// Write border
+        /// 输出边框
+        /// </summary>
+        /// <param name="border">Border style</param>
+        /// <param name="rect">Rectangle</param>
+        /// <returns>Task</returns>
+        Task WriteBorderAsync(PdfStyleBorder border, RectangleF rect);
+
+        /// <summary>
         /// Write border and background
         /// 输出边框和背景
         /// </summary>

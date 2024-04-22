@@ -36,15 +36,18 @@ namespace com.etsoo.EasyPdf.Content
 
         public override Task CalculatePositionAsync(IPdfPage page, PdfBlockLine line, PdfBlockLineChunk chunk)
         {
-            var size = Font!.Size;
-            var chunkSize = chunk.Font.Size;
-            if (Type == PdfChunkType.Superscript)
+            if (Font != null && chunk.Font != null)
             {
-                chunk.StartPoint.Y += line.Height + 1 - size - offset / 2;
-            }
-            else
-            {
-                chunk.StartPoint.Y += line.Height - chunkSize - offset;
+                var size = Font.Size;
+                var chunkSize = chunk.Font.Size;
+                if (Type == PdfChunkType.Superscript)
+                {
+                    chunk.StartPoint.Y += line.Height + 1 - size - offset / 2;
+                }
+                else
+                {
+                    chunk.StartPoint.Y += line.Height - chunkSize - offset;
+                }
             }
 
             return base.CalculatePositionAsync(page, line, chunk);
@@ -66,7 +69,7 @@ namespace com.etsoo.EasyPdf.Content
             var style = Style.Parent?.GetComputedStyle();
 
             var family = style?.Font!;
-            var size = (style?.FontSize).GetValueOrDefault(16).PxToPt();
+            var size = (style?.FontSize).GetValueOrDefault(12);
             var fontStyle = style?.FontStyle ?? PdfFontStyle.Regular;
 
             var font = writer.CreateFont(family, size, fontStyle);

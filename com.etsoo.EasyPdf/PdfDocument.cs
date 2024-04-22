@@ -8,6 +8,7 @@ namespace com.etsoo.EasyPdf
 {
     /// <summary>
     /// PDF document creation, based on PDF 1.7
+    /// All sizes are in points (pt) (1/72 inch)
     /// PDF 文档创建，基于 PDF 1.7
     /// A basic conforming PDF files shall be constructed of following four elements
     /// 1. A one-line header identifying that make up the document contained in the file.
@@ -28,19 +29,13 @@ namespace com.etsoo.EasyPdf
 
         private readonly Stream stream;
         private readonly bool keepOpen;
-        private IPdfWriter? writer;
+        private PdfWriter? writer;
 
         /// <summary>
         /// Version
         /// 版本
         /// </summary>
         public decimal Version { get; private set; } = PdfVersion.V17;
-
-        /// <summary>
-        /// Base URI
-        /// 基础 URI
-        /// </summary>
-        public string? BaseUri { get; set; }
 
         /// <summary>
         /// Page data
@@ -58,9 +53,9 @@ namespace com.etsoo.EasyPdf
         public PdfStyle Style { get; } = new()
         {
             Font = "Arial",
-            // 16px = 12pt
-            FontSize = 16,
-            Padding = new PdfStyleSpace(60)
+            // 12pt = 16px
+            FontSize = 12,
+            Padding = new PdfStyleSpace(40)
         };
 
         /// <summary>

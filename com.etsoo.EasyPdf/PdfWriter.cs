@@ -19,6 +19,7 @@ namespace com.etsoo.EasyPdf
         private readonly PdfPageTree pageTree;
 
         private bool disposed = false;
+        private PdfStyleSpace? lastMargin;
 
         private ushort objIndex = 0;
 
@@ -62,6 +63,36 @@ namespace com.etsoo.EasyPdf
 
             var obj = CreateObj();
             pageTree = new PdfPageTree(obj, document.PageData);
+        }
+
+        /// <summary>
+        /// Adjust margin to reduce double space
+        /// 调整边距以减少双倍空间
+        /// </summary>
+        /// <param name="margin">Margin</param>
+        public void AdjustMargin(PdfStyleSpace? margin)
+        {
+            if (margin == null)
+            {
+                return;
+            }
+
+            if (lastMargin == null)
+            {
+                lastMargin = margin;
+                return;
+            }
+
+            if (lastMargin.Bottom >= margin.Top)
+            {
+                margin.Top = 0;
+            }
+            else
+            {
+                margin.Top -= lastMargin.Bottom;
+            }
+
+            lastMargin = margin;
         }
 
         /// <summary>
@@ -294,8 +325,8 @@ namespace com.etsoo.EasyPdf
                 return (currentFont!, false);
             }
 
-            // Size is px, the to pt
-            var size = style.FontSize.GetValueOrDefault(16).PxToPt();
+            // Size is pt
+            var size = style.FontSize.GetValueOrDefault(12);
             var fontStyle = style.FontStyle ?? PdfFontStyle.Regular;
 
             var font = CreateFont(familyName, size, fontStyle);

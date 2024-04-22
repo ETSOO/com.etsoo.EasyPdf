@@ -224,6 +224,18 @@ namespace com.etsoo.EasyPdf.Content
     public record PdfBlockLine
     {
         /// <summary>
+        /// Index
+        /// 行索引
+        /// </summary>
+        public int Index { get; }
+
+        /// <summary>
+        /// Is first line
+        /// 是否为第一行
+        /// </summary>
+        public bool First => Index == 0;
+
+        /// <summary>
         /// Line width
         /// 行宽
         /// </summary>
@@ -234,6 +246,12 @@ namespace com.etsoo.EasyPdf.Content
         /// 行高，最高块的高度
         /// </summary>
         public float Height { get; private set; }
+
+        /// <summary>
+        /// Max font height
+        /// 最大字体高度
+        /// </summary>
+        public float MaxFontHeight { get; private set; }
 
         /// <summary>
         /// Is rendered
@@ -261,6 +279,11 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         public PdfBlockLineChunk[] Chunks => [.. chunks];
 
+        internal PdfBlockLine(int index)
+        {
+            Index = index;
+        }
+
         /// <summary>
         /// Add a chunk
         /// 添加块
@@ -273,6 +296,15 @@ namespace com.etsoo.EasyPdf.Content
             if (chunk.Height > Height)
             {
                 Height = chunk.Height;
+            }
+
+            if (chunk.Font != null)
+            {
+                var fontHeight = chunk.Font.LineHeight - chunk.Font.LineGap;
+                if (fontHeight > MaxFontHeight)
+                {
+                    MaxFontHeight = fontHeight;
+                }
             }
         }
     }
