@@ -15,6 +15,12 @@ namespace com.etsoo.EasyPdf.Content
     public class PdfTextChunk : PdfChunk
     {
         /// <summary>
+        /// Line height adjustment
+        /// 行高调整
+        /// </summary>
+        public const float LineHeightAdjust = 1;
+
+        /// <summary>
         /// Content
         /// 内容
         /// </summary>
@@ -80,7 +86,7 @@ namespace com.etsoo.EasyPdf.Content
             // Lending
             if (Type == PdfChunkType.Text && chunk.Font != null)
             {
-                var lineHeight = line.Height;
+                var lineHeight = line.Height - LineHeightAdjust;
                 if (chunk.Font.LineHeight < lineHeight)
                 {
                     var index = chunk.FindOperator(PdfOperator.TLBytes);
@@ -137,7 +143,8 @@ namespace com.etsoo.EasyPdf.Content
             if (Font == null)
             {
                 Font = font;
-                lineHeight = style.GetLineHeight(font.LineHeight);
+
+                lineHeight = style.GetLineHeight(font.LineHeight) + LineHeightAdjust;
             }
             else
             {

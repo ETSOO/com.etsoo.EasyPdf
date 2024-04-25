@@ -105,6 +105,7 @@ namespace com.etsoo.EasyPdf.Content
         private readonly IImageFormat format;
         private int width;
         private int height;
+        private PdfStyleBorder? border;
 
         private PngCompressionLevel pngCompressionLevel
         {
@@ -131,26 +132,46 @@ namespace com.etsoo.EasyPdf.Content
             this.format = format;
         }
 
-        public override Task CalculatePositionAsync(IPdfPage page, PdfBlockLine line, PdfBlockLineChunk chunk)
+        public override async Task CalculatePositionAsync(IPdfPage page, PdfBlockLine line, PdfBlockLineChunk chunk)
         {
             var point = page.CalculatePoint(chunk.StartPoint);
 
             // Image rendering starts from bottom to top
             // width & height is different from the text rendering
-            var pointBytes = PdfOperator.Tm(width, 0, 0, height, point.X, point.Y - height, true);
+            var ptWidth = width.PixelToPt();
+            var ptHeight = height.PixelToPt();
+
+            var x = point.X;
+            var y = point.Y - ptHeight;
+
+            var pointBytes = PdfOperator.Tm(ptWidth, 0, 0, ptHeight, x, y, true);
 
             chunk.InsertAfter(pointBytes, PdfOperator.q);
-            return Task.CompletedTask;
+
+            // Border
+            // For simplicity, draw the border on top of the image
+            if (border != null)
+            {
+                var rect = new System.Drawing.RectangleF(x, y, ptWidth, ptHeight);
+                await page.WriteBorderAsync(border, rect);
+            }
         }
 
         public override async Task<bool> WriteInnerAsync(PdfWriter writer, PdfStyle style, System.Drawing.RectangleF rect, PdfPoint point, PdfBlockLine line, Func<PdfBlockLine, PdfBlockLine?, Task> newLineAction)
         {
-            // Image size
+            // Border
+            var border = style.Border;
+            if (border?.HasBorder is true)
+            {
+                this.border = border;
+            }
+
+            // Image size, in pixels
             var imageWidth = image.Width;
             var imageHeight = image.Height;
 
-            // Target image display size
-            (width, height) = style.GetSize(imageWidth, imageHeight, writer.CurrentPage.ContentRect);
+            // Target image display size in pixels
+            (width, height) = style.GetSize(imageWidth, imageHeight, rect);
 
             // Resize size
             var resizeWidth = (int)(width * resizeFactor);
@@ -164,7 +185,6 @@ namespace com.etsoo.EasyPdf.Content
             {
                 resizeHeight = imageHeight;
             }
-
 
             // Auto resize to save space
             if (resizeWidth != image.Width || resizeHeight != image.Height)
@@ -244,7 +264,7 @@ namespace com.etsoo.EasyPdf.Content
             };
 
             // New chunk
-            var chunk = new PdfBlockLineChunk(null, height, StartPoint, false)
+            var chunk = new PdfBlockLineChunk(null, height.PixelToPt(), StartPoint, false)
             {
                 Owner = this,
                 Operators = operators,

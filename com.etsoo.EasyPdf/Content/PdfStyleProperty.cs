@@ -162,6 +162,7 @@
     public enum PdfStyleBorderStyle
     {
         None,
+        Dashed,
         Dotted,
         Solid
     }
@@ -172,15 +173,21 @@
     /// </summary>
     public record PdfStyleBorderSide
     {
+        /// <summary>
+        /// None border
+        /// 空边框
+        /// </summary>
+        public static PdfStyleBorderSide None => new(PdfColor.Black, 0, PdfStyleBorderStyle.None);
+
         public virtual PdfColor Color { get; set; }
 
-        public virtual int Width { get; set; }
+        public virtual float Width { get; set; }
 
         public virtual PdfStyleBorderStyle Style { get; set; }
 
         public virtual bool HasBorder => Style != PdfStyleBorderStyle.None && Width > 0;
 
-        public PdfStyleBorderSide(PdfColor color, int width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
+        public PdfStyleBorderSide(PdfColor color, float width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
         {
             Color = color;
             Width = width;
@@ -212,7 +219,7 @@
             }
         }
 
-        override public int Width
+        override public float Width
         {
             get
             {
@@ -256,31 +263,19 @@
 
         public PdfStyleBorderSide Left { get; internal set; }
 
-        public PdfStyleSpace? Radius { get; set; }
+        public PdfStyleSpace? Radius { get; internal set; }
 
         public override bool HasBorder => Left.HasBorder || Top.HasBorder || Right.HasBorder || Bottom.HasBorder;
 
         public bool SameStyle => Left.Equals(Top) && Left.Equals(Right) && Left.Equals(Bottom);
 
-        public PdfStyleBorder(PdfColor color, int width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
+        public PdfStyleBorder(PdfColor color, float width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
             : base(color, width, style)
         {
             Top = new PdfStyleBorderSide(color, width, style);
             Right = new PdfStyleBorderSide(color, width, style);
             Bottom = new PdfStyleBorderSide(color, width, style);
             Left = new PdfStyleBorderSide(color, width, style);
-        }
-
-        public PdfStyleBorder DeepClone()
-        {
-            return new PdfStyleBorder(Color, Width, Style)
-            {
-                Top = Top with { },
-                Right = Right with { },
-                Bottom = Bottom with { },
-                Left = Left with { },
-                Radius = Radius
-            };
         }
     }
 }

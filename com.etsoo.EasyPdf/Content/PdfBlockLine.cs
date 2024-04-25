@@ -279,6 +279,12 @@ namespace com.etsoo.EasyPdf.Content
         /// </summary>
         public PdfBlockLineChunk[] Chunks => [.. chunks];
 
+        /// <summary>
+        /// Has text
+        /// 是否有文本
+        /// </summary>
+        public bool HasText => chunks.Any(c => c.Chars.Count > 0);
+
         internal PdfBlockLine(int index)
         {
             Index = index;
@@ -304,6 +310,14 @@ namespace com.etsoo.EasyPdf.Content
                 if (fontHeight > MaxFontHeight)
                 {
                     MaxFontHeight = fontHeight;
+                }
+            }
+            else
+            {
+                // No font, like picture
+                if (chunk.Height > MaxFontHeight)
+                {
+                    MaxFontHeight = chunk.Height;
                 }
             }
         }

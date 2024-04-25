@@ -185,6 +185,7 @@ namespace com.etsoo.EasyPdf.Objects
 
         private RectangleF GetPageRectangle(RectangleF docRect, PdfStyle style)
         {
+            // box-sizing: border-box behavior
             var adjustLeft = (style.Padding?.Left ?? 0) + (style.Border?.Left?.Width ?? 0);
             var adjustTop = (style.Padding?.Top ?? 0) + (style.Border?.Top?.Width ?? 0);
             var adjustRight = (style.Padding?.Right ?? 0) + (style.Border?.Right?.Width ?? 0);
@@ -363,6 +364,205 @@ namespace com.etsoo.EasyPdf.Objects
             await RestoreStateAsync();
         }
 
+        private async Task CreateDashedLineXAsync(float width, Vector2 start, Vector2 end)
+        {
+            if (width < 1.5) width = 1.5f;
+
+            var (w, g) = CalculateDashedGap(end.X - start.X, width);
+
+            var step = 0;
+            while (start.X < end.X)
+            {
+                if (step % 2 == 0)
+                {
+                    start.X += w;
+
+                    if (start.X > end.X)
+                        await Stream.WriteAsync(PdfOperator.Zl(end));
+                    else
+                        await Stream.WriteAsync(PdfOperator.Zl(start));
+                }
+                else
+                {
+                    start.X += g;
+                    await Stream.WriteAsync(PdfOperator.Zm(start));
+                }
+
+                step++;
+            }
+        }
+
+        private (float width, float gap) CalculateDashedGap(float width, float gap, int multiple = 2)
+        {
+            var count = Convert.ToInt32((width + gap) / ((1 + multiple) * gap));
+            var newGap = (width - multiple * gap * count) / (count - 1);
+            return (multiple * gap, newGap);
+        }
+
+        private async Task CreateDashedLineYAsync(float width, Vector2 start, Vector2 end)
+        {
+            if (width < 1.5) width = 1.5f;
+
+            var (w, g) = CalculateDashedGap(end.Y - start.Y, width);
+
+            var step = 0;
+            while (start.Y < end.Y)
+            {
+                if (step % 2 == 0)
+                {
+                    start.Y += w;
+
+                    if (start.Y > end.Y)
+                        await Stream.WriteAsync(PdfOperator.Zl(end));
+                    else
+                        await Stream.WriteAsync(PdfOperator.Zl(start));
+                }
+                else
+                {
+                    start.Y += g;
+                    await Stream.WriteAsync(PdfOperator.Zm(start));
+                }
+
+                step++;
+            }
+        }
+
+        private async Task CreateDottedLineXAsync(float width, Vector2 start, Vector2 end)
+        {
+            if (width < 1.5) width = 1.5f;
+
+            var (w, g) = CalculateDashedGap(end.X - start.X, width, 1);
+
+            var step = 0;
+            while (start.X < end.X)
+            {
+                if (step % 2 == 0)
+                {
+                    await Stream.WriteAsync(PdfOperator.Circle(start.X + w / 2, start.Y, w / 2));
+                    start.X += w;
+                }
+                else
+                {
+                    start.X += g;
+                    await Stream.WriteAsync(PdfOperator.Zm(start));
+                }
+
+                step++;
+            }
+        }
+
+        private async Task CreateDottedLineYAsync(float width, Vector2 start, Vector2 end)
+        {
+            if (width < 1.5) width = 1.5f;
+
+            var (w, g) = CalculateDashedGap(end.Y - start.Y, width, 1);
+
+            var step = 0;
+            while (start.Y < end.Y)
+            {
+                if (step % 2 == 0)
+                {
+                    await Stream.WriteAsync(PdfOperator.Circle(start.X, start.Y + w / 2, w / 2));
+                    start.Y += w;
+                }
+                else
+                {
+                    start.Y += g;
+                    await Stream.WriteAsync(PdfOperator.Zm(start));
+                }
+
+                step++;
+            }
+        }
+
+        private async Task DrawBorderAsync(float width, PdfColor color, PdfStyleBorderStyle style, Vector2 start, Vector2 end, bool vertical)
+        {
+            if (style == PdfStyleBorderStyle.Dotted)
+            {
+                await Stream.WriteAsync(PdfOperator.Zw(0));
+                await Stream.WriteAsync(PdfOperator.RG2(color));
+
+                if (vertical)
+                    await CreateDottedLineYAsync(width, start, end);
+                else
+                    await CreateDottedLineXAsync(width, start, end);
+
+                await Stream.WriteAsync(PdfOperator.B);
+            }
+            else
+            {
+                await Stream.WriteAsync(PdfOperator.RG(color));
+                await Stream.WriteAsync(PdfOperator.Zw(width));
+                await Stream.WriteAsync(PdfOperator.Zm(start));
+
+                if (style == PdfStyleBorderStyle.Dashed)
+                {
+                    if (vertical)
+                        await CreateDashedLineYAsync(width, start, end);
+                    else
+                        await CreateDashedLineXAsync(width, start, end);
+                }
+                else
+                {
+                    await Stream.WriteAsync(PdfOperator.Zl(end));
+                }
+
+                await Stream.WriteAsync(PdfOperator.S);
+            }
+        }
+
+        private async Task WriteLeftBorderAsync(RectangleF rect, float width, PdfColor color, PdfStyleBorderStyle style)
+        {
+            var fx = rect.X + width / 2;
+            var fy = rect.Y;
+            var start = new Vector2(fx, fy);
+
+            var tx = fx;
+            var ty = rect.Y + rect.Height;
+            var end = new Vector2(tx, ty);
+
+            await DrawBorderAsync(width, color, style, start, end, true);
+        }
+
+        private async Task WriteTopBorderAsync(RectangleF rect, float width, PdfColor color, PdfStyleBorderStyle style)
+        {
+            var fx = rect.X;
+            var fy = rect.Y + rect.Height - width / 2;
+            var start = new Vector2(fx, fy);
+
+            var tx = rect.X + rect.Width;
+            var ty = fy;
+            var end = new Vector2(tx, ty);
+
+            await DrawBorderAsync(width, color, style, start, end, false);
+        }
+
+        private async Task WriteRightBorderAsync(RectangleF rect, float width, PdfColor color, PdfStyleBorderStyle style)
+        {
+            var fx = rect.X + rect.Width - width / 2;
+            var fy = rect.Y + rect.Height;
+            var end = new Vector2(fx, fy);
+
+            var tx = fx;
+            var ty = rect.Y;
+            var start = new Vector2(tx, ty);
+
+            await DrawBorderAsync(width, color, style, start, end, true);
+        }
+
+        private async Task WriteBottomBorderAsync(RectangleF rect, float width, PdfColor color, PdfStyleBorderStyle style)
+        {
+            var fx = rect.X + rect.Width;
+            var fy = rect.Y + width / 2;
+            var end = new Vector2(fx, fy);
+
+            var tx = rect.X;
+            var ty = fy;
+            var start = new Vector2(tx, ty);
+
+            await DrawBorderAsync(width, color, style, start, end, false);
+        }
+
         /// <summary>
         /// Write border
         /// 输出边框
@@ -375,93 +575,44 @@ namespace com.etsoo.EasyPdf.Objects
             // Save graphics state
             await SaveStateAsync();
 
-            if (border.SameStyle)
+            var left = border.Left;
+            if (border.SameStyle && (left.Style == PdfStyleBorderStyle.Solid))
             {
                 // Reduce operators for simple style
-                var width = border.Left.Width;
+                var width = left.Width;
                 var widthHalf = width / 2.0F;
                 rect.Inflate(-widthHalf, -widthHalf);
 
-                await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
+                await Stream.WriteAsync(PdfOperator.RG(left.Color));
                 await Stream.WriteAsync(PdfOperator.Zw(width));
                 await Stream.WriteAsync(PdfOperator.Zre(rect));
                 await Stream.WriteAsync(PdfOperator.S);
             }
             else
             {
-                var leftWidth = border.Left.Width;
-                var leftWidthHalf = leftWidth / 2.0F;
-
+                var leftWidth = left.Width;
                 var topWidth = border.Top.Width;
-                var topWidthHalf = topWidth / 2.0F;
-
                 var rightWidth = border.Right.Width;
-                var rightWidthHalf = rightWidth / 2.0F;
-
                 var bottomWidth = border.Bottom.Width;
-                var bottomWidthHalf = bottomWidth / 2.0F;
 
-                // Extended half width
-                float fx, fy, tx, ty;
-
-                if (leftWidth > 0)
+                if (leftWidth > 0 && border.Left.Style != PdfStyleBorderStyle.None)
                 {
-                    fx = rect.X - leftWidthHalf;
-                    fy = rect.Y - bottomWidth;
-
-                    tx = fx;
-                    ty = rect.Y + rect.Height + topWidth;
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Left.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(leftWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
-                    await Stream.WriteAsync(PdfOperator.S);
+                    await WriteLeftBorderAsync(rect, leftWidth, border.Left.Color, border.Left.Style);
                 }
 
-                if (topWidth > 0)
+                if (topWidth > 0 && border.Top.Style != PdfStyleBorderStyle.None)
                 {
-                    fx = rect.X - leftWidth;
-                    fy = rect.Y + rect.Height + topWidthHalf;
-
-                    tx = rect.X + rect.Width + rightWidth;
-                    ty = fy;
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Top.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(topWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
-                    await Stream.WriteAsync(PdfOperator.S);
+                    await WriteTopBorderAsync(rect, topWidth, border.Top.Color, border.Top.Style);
                 }
 
-                if (rightWidth > 0)
+                if (rightWidth > 0 && border.Right.Style != PdfStyleBorderStyle.None)
                 {
-                    fx = rect.X + rect.Width + rightWidthHalf;
-                    fy = rect.Y + rect.Height + topWidth;
-
-                    tx = fx;
-                    ty = rect.Y - bottomWidth;
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Right.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(rightWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
-                    await Stream.WriteAsync(PdfOperator.S);
+                    await WriteRightBorderAsync(rect, rightWidth, border.Right.Color, border.Right.Style);
                 }
 
-                if (bottomWidth > 0)
+                if (bottomWidth > 0 && border.Bottom.Style != PdfStyleBorderStyle.None)
                 {
-                    fx = rect.X + rect.Width + rightWidth;
-                    fy = rect.Y - bottomWidthHalf;
-
-                    tx = rect.X - leftWidth;
-                    ty = fy;
-
-                    await Stream.WriteAsync(PdfOperator.Zm(new Vector2(fx, fy)));
-                    await Stream.WriteAsync(PdfOperator.RG(border.Bottom.Color));
-                    await Stream.WriteAsync(PdfOperator.Zw(bottomWidth));
-                    await Stream.WriteAsync(PdfOperator.Zl(new Vector2(tx, ty)));
-                    await Stream.WriteAsync(PdfOperator.S);
+                    await WriteBottomBorderAsync(rect, bottomWidth, border.Bottom.Color, border.Bottom.Style);
                 }
             }
 

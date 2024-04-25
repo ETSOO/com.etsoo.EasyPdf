@@ -335,6 +335,39 @@ namespace com.etsoo.EasyPdf
         }
 
         /// <summary>
+        /// Pixel to point
+        /// 像素到点
+        /// </summary>
+        /// <param name="pixel">Pixels</param>
+        /// <returns>Result</returns>
+        public static float PixelToPt(this float pixel)
+        {
+            return pixel * 0.75f;
+        }
+
+        /// <summary>
+        /// Pixel to point
+        /// 像素到点
+        /// </summary>
+        /// <param name="pixel">Pixels</param>
+        /// <returns>Result</returns>
+        public static float PixelToPt(this int pixel)
+        {
+            return pixel * 0.75f;
+        }
+
+        /// <summary>
+        /// Point to pixel
+        /// 点到像素
+        /// </summary>
+        /// <param name="pt">Points</param>
+        /// <returns>Results</returns>
+        public static float PtToPixel(this float pt)
+        {
+            return pt / 0.75f;
+        }
+
+        /// <summary>
         /// Convert PdfArray to Rectangle
         /// 转换PDF数组为正方形数据
         /// </summary>

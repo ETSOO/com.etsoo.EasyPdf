@@ -1,5 +1,4 @@
-﻿using com.etsoo.HtmlUtils;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Numerics;
 using System.Text;
 
@@ -350,20 +349,42 @@ namespace com.etsoo.EasyPdf.Content
         }
 
         /// <summary>
-        /// Defines the dash pattern, where 'width' represents the length of the dash and 'height' represents the length of the gap
+        /// Draw circle
         /// </summary>
-        /// <param name="size">Size, null to reset</param>
+        /// <param name="x">Start x</param>
+        /// <param name="y">Start y</param>
+        /// <param name="r">Radius</param>
         /// <returns>Bytes</returns>
-        public static byte[] Zd(HtmlSize? size = null)
+        public static byte[] Circle(float x, float y, float r)
         {
-            if (size.HasValue)
-            {
-                return Zd(size.Value);
-            }
-            else
-            {
-                return d;
-            }
+            var c = 0.552284749831f;
+            return
+            [
+                .. Zm(x + r, y),
+                .. Zc(x + r, y + r * c, x + r * c, y + r, x, y + r),
+                .. Zc(x - r * c, y + r, x - r, y + r * c, x - r, y),
+                .. Zc(x - r, y - r * c, x - r * c, y - r, x, y - r),
+                .. Zc(x + r * c, y - r, x + r, y - r * c, x + r, y)
+            ];
+        }
+
+        /// <summary>
+        /// Append a cubic Bezier curve to the current path
+        /// </summary>
+        /// <param name="x1">Control point 1 x</param>
+        /// <param name="y1">Control point 1 y</param>
+        /// <param name="x2">Control point 2 x</param>
+        /// <param name="y2">Control point 2 y</param>
+        /// <param name="x3">Target x</param>
+        /// <param name="y3">Target y</param>
+        /// <returns>Bytes</returns>
+        public static byte[] Zc(float x1, float y1, float x2, float y2, float x3, float y3)
+        {
+            return
+            [
+                .. Encoding.ASCII.GetBytes($"{x1} {y1} {x2} {y2} {x3} {y3}"),
+                .. " c\n"u8
+            ];
         }
 
         /// <summary>
@@ -402,9 +423,20 @@ namespace com.etsoo.EasyPdf.Content
         /// <returns>Bytes</returns>
         public static byte[] Zm(Vector2 point)
         {
+            return Zm(point.X, point.Y);
+        }
+
+        /// <summary>
+        /// Moves the current point to the position (point) without drawing anything
+        /// </summary>
+        /// <param name="x">X</param>
+        /// <param name="y">Y</param>
+        /// <returns>Bytes</returns>
+        public static byte[] Zm(float x, float y)
+        {
             return
             [
-                .. Encoding.ASCII.GetBytes($"{point.X} {point.Y}"),
+                .. Encoding.ASCII.GetBytes($"{x} {y}"),
                 .. " m\n"u8
             ];
         }

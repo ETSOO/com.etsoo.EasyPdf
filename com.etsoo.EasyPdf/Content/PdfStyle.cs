@@ -82,9 +82,23 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="width">Width</param>
         /// <param name="style">Style</param>
         /// <returns>Style</returns>
-        public PdfStyle SetBorder(PdfColor color, int width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
+        public PdfStyle SetBorder(PdfColor color, float width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
         {
             Border = new PdfStyleBorder(color, width, style);
+            return this;
+        }
+
+        /// <summary>
+        /// Set border
+        /// 设置边框
+        /// </summary>
+        /// <param name="color">Border color</param>
+        /// <param name="width">Width</param>
+        /// <param name="style">Style</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBorder(string color, float width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
+        {
+            Border = new PdfStyleBorder(PdfColor.Parse(color) ?? PdfColor.Black, width, style);
             return this;
         }
 
@@ -568,16 +582,16 @@ namespace com.etsoo.EasyPdf.Content
             var width = Width ?? size?.Width ?? 0;
             var height = Height ?? size?.Height ?? 0;
 
-            var marginLeft = (Margin?.Left ?? 0) + (Border?.Left.Width ?? 0);
-            var marginTop = (Margin?.Top ?? 0) + (Border?.Top.Width ?? 0);
+            var marginLeft = Margin?.Left ?? 0;
+            var marginTop = Margin?.Top ?? 0;
 
-            var marginRight = (Margin?.Right ?? 0) + (Border?.Right.Width ?? 0);
-            var marginBottom = (Margin?.Bottom ?? 0) + (Border?.Bottom.Width ?? 0);
+            var marginRight = Margin?.Right ?? 0;
+            var marginBottom = Margin?.Bottom ?? 0;
 
-            var paddingLeft = Padding?.Left ?? 0;
-            var paddingTop = Padding?.Top ?? 0;
-            var paddingRight = Padding?.Right ?? 0;
-            var paddingBottom = Padding?.Bottom ?? 0;
+            var paddingLeft = (Padding?.Left ?? 0) + (Border?.Left.Width ?? 0);
+            var paddingTop = (Padding?.Top ?? 0) + (Border?.Top.Width ?? 0);
+            var paddingRight = (Padding?.Right ?? 0) + (Border?.Right.Width ?? 0);
+            var paddingBottom = (Padding?.Bottom ?? 0) + (Border?.Bottom.Width ?? 0);
 
             width -= marginLeft + marginRight;
             height -= marginTop + marginBottom;
@@ -621,6 +635,7 @@ namespace com.etsoo.EasyPdf.Content
 
             var rectLayout = new RectangleF(left, top, width, height);
 
+            // box-sizing: border-box behavior
             width -= paddingLeft + paddingRight;
             height -= paddingTop + paddingBottom;
             left += paddingLeft;
@@ -639,12 +654,13 @@ namespace com.etsoo.EasyPdf.Content
         /// Get display size
         /// 获取显示尺寸
         /// </summary>
-        /// <param name="sourceWidth">Source width</param>
-        /// <param name="sourceHeight">Source height</param>
+        /// <param name="sourceWidth">Source width in pixels</param>
+        /// <param name="sourceHeight">Source height in pixels</param>
         /// <param name="rect">Target display rectangle</param>
-        /// <returns>Result</returns>
+        /// <returns>Result in pixels</returns>
         public (int width, int height) GetSize(float sourceWidth, float sourceHeight, RectangleF rect)
         {
+            // CSS width & height in points
             var cssWidth = Width;
             var cssHeight = Height;
 
@@ -653,11 +669,11 @@ namespace com.etsoo.EasyPdf.Content
             var ratio = sourceWidth / sourceHeight;
             if (cssWidth.HasValue)
             {
-                width = (int)cssWidth.Value;
+                width = (int)cssWidth.Value.PtToPixel();
 
                 if (cssHeight.HasValue)
                 {
-                    height = (int)cssHeight.Value;
+                    height = (int)cssHeight.Value.PtToPixel();
                 }
                 else
                 {
@@ -668,13 +684,13 @@ namespace com.etsoo.EasyPdf.Content
             {
                 if (cssHeight.HasValue)
                 {
-                    height = (int)cssHeight.Value;
+                    height = (int)cssHeight.Value.PtToPixel();
                     width = (int)(height * ratio);
                 }
                 else
                 {
-                    width = (int)rect.Width;
-                    height = (int)rect.Height;
+                    width = (int)rect.Width.PtToPixel();
+                    height = (int)rect.Height.PtToPixel();
                 }
             }
 

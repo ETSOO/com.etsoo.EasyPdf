@@ -74,6 +74,8 @@ namespace com.etsoo.EasyPdf
         {
             if (margin == null)
             {
+                // Reset the chain
+                lastMargin = null;
                 return;
             }
 

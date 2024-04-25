@@ -105,25 +105,11 @@ namespace com.etsoo.EasyPdf.Content
                 await writer.DefineOpacityAsync(opacity, true);
             }
 
-            // Margin left
-            var marginLeft = style.Margin?.Left ?? 0;
-
-            // Margin right
-            var marginRight = style.Margin?.Right ?? 0;
-
             // Start point
             StartPoint = point.ToVector2();
 
-            // Margin left
-            point.X += marginLeft;
-            line.Width += marginLeft;
-
             // Inner rendering
             var newPage = await WriteInnerAsync(writer, style, rect, point, line, newLineAction);
-
-            // Margin right
-            point.X += marginRight;
-            line.Width += marginRight;
 
             // End point
             EndPoint = point.ToVector2();

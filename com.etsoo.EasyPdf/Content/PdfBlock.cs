@@ -18,6 +18,12 @@ namespace com.etsoo.EasyPdf.Content
         public Vector2 BasePoint { get; set; }
 
         /// <summary>
+        /// Start point
+        /// 开始点
+        /// </summary>
+        public Vector2 StartPoint;
+
+        /// <summary>
         /// Current line
         /// 当前行
         /// </summary>
@@ -39,6 +45,12 @@ namespace com.etsoo.EasyPdf.Content
         private bool hasBorder;
 
         /// <summary>
+        /// Bottom adjust
+        /// 底部调整
+        /// </summary>
+        protected float BottomAdjust { get; private set; }
+
+        /// <summary>
         /// Set parent style
         /// 设置父样式
         /// </summary>
@@ -57,38 +69,53 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="writer">Current writer</param>
         /// <param name="style">Current style</param>
         /// <param name="rect">Current rectangle</param>
+        /// <param name="point">Current point</param>
         /// <param name="line">Current completed line</param>
         /// <param name="newLine">New line</param>
         /// <returns></returns>
-        protected virtual async Task NewLineActionAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect, PdfBlockLine line, PdfBlockLine? newLine)
+        protected virtual async Task NewLineActionAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect, PdfPoint point, PdfBlockLine line, PdfBlockLine? newLine)
         {
             var bgcolor = style.BackgroundColor;
-            if (line.Chunks.Length > 0 && (bgcolor.HasValue || hasBorder))
+            if (bgcolor.HasValue)
             {
+                var adjust = PdfTextChunk.LineHeightAdjust + 1;
+
                 // Start point
-                var startPoint = line.Chunks.First().StartPoint;
+                var startPoint = line.Chunks.FirstOrDefault()?.StartPoint ?? StartPoint;
 
                 var x = layout.X;
                 var width = layout.Width;
+                var lineHeight = line.Height;
                 float y, height;
 
                 if (line.First)
                 {
                     // First line
-                    height = startPoint.Y - layout.Y + line.Height;
+                    height = startPoint.Y - layout.Y + lineHeight;
+
+                    if (newLine == null)
+                    {
+                        // Also the last line
+                        height += BottomAdjust;
+                    }
+                    else
+                    {
+                        height += adjust;
+                    }
+
                     y = layout.Y + height;
                 }
                 else if (newLine == null)
                 {
                     // Last line
-                    height = line.Height + style.Padding?.Bottom ?? 0;
-                    y = startPoint.Y + height;
+                    height = lineHeight + BottomAdjust;
+                    y = startPoint.Y + adjust + height;
                 }
                 else
                 {
                     // Other lines
-                    height = line.Height;
-                    y = startPoint.Y + height;
+                    height = lineHeight;
+                    y = startPoint.Y + adjust + height;
                 }
 
                 // Line rectangle
@@ -96,32 +123,28 @@ namespace com.etsoo.EasyPdf.Content
                 var lineRect = new RectangleF(gPoint.X, gPoint.Y, width, height);
 
                 // Draw background color
-                if (bgcolor.HasValue)
-                {
-                    //await page.WriteBackgroundAsync(bgcolor.Value, lineRect);
-                }
+                await page.WriteBackgroundAsync(bgcolor.Value, lineRect);
+            }
+
+            // Border
+            if (hasBorder && newLine == null)
+            {
+                var adjust = PdfTextChunk.LineHeightAdjust + 1;
+
+                // Start point
+                var startPoint = line.Chunks.FirstOrDefault()?.StartPoint ?? StartPoint;
+
+                var width = layout.Width;
+                var height = startPoint.Y - layout.Y + line.Height + BottomAdjust + adjust;
+                var x = layout.X;
+                var y = layout.Y + height;
+
+                // Line rectangle
+                var gPoint = page.CalculatePoint(new Vector2(x, y));
+                var lineRect = new RectangleF(gPoint.X, gPoint.Y, width, height);
 
                 // Draw border
-                if (hasBorder)
-                {
-                    var border = style.Border!.DeepClone();
-
-                    if (line.Index == 0)
-                    {
-                        border.Bottom.Width = 0;
-                    }
-                    else if (newLine == null)
-                    {
-                        border.Top.Width = 0;
-                    }
-                    else
-                    {
-                        border.Bottom.Width = 0;
-                        border.Top.Width = 0;
-                    }
-
-                    await page.WriteBorderAsync(border, lineRect);
-                }
+                await page.WriteBorderAsync(style.Border!, lineRect);
             }
 
             // Update current line reference
@@ -143,6 +166,9 @@ namespace com.etsoo.EasyPdf.Content
             if (Rendered)
                 throw new InvalidOperationException("The block has been rendered.");
 
+            // Back to most left
+            page.CurrentPoint.X = 0;
+
             // Save graphics state
             await page.SaveStateAsync();
 
@@ -158,6 +184,8 @@ namespace com.etsoo.EasyPdf.Content
             // Rectangle
             var (layout, rect) = style.GetRectangle(page.ContentRect.Size, page.CurrentPoint);
             this.layout = layout;
+
+            BottomAdjust = layout.Bottom - rect.Bottom;
             hasBorder = style.Border?.HasBorder ?? false;
 
             // Rotate
@@ -187,14 +215,20 @@ namespace com.etsoo.EasyPdf.Content
                 Y = rect.Y
             } : page.CurrentPoint;
 
+            // Start point
+            StartPoint = point.ToVector2();
+
             // Write
-            await WriteInnerAsync(page, writer, style, rect, point);
+            var completed = await WriteInnerAsync(page, writer, style, rect, point);
 
             // Store graphics state
             await page.RestoreStateAsync();
 
             // Adjust
-            AdjustBottom(point, style);
+            if (completed)
+            {
+                AdjustBottom(point, style);
+            }
 
             // Update render status
             Rendered = true;
@@ -208,9 +242,8 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="style">Style</param>
         protected virtual void AdjustBottom(PdfPoint point, PdfStyle style)
         {
-            var paddingBottom = style.Padding?.Bottom ?? 0;
-            var marginBottom = style.Margin?.Bottom ?? 0 + style.Border?.Bottom.Width ?? 0;
-            point.Y += paddingBottom + marginBottom;
+            var marginBottom = style.Margin?.Bottom ?? 0;
+            point.Y += BottomAdjust + marginBottom;
         }
 
         /// <summary>
@@ -222,7 +255,7 @@ namespace com.etsoo.EasyPdf.Content
         /// <param name="style">Current style</param>
         /// <param name="rect">Current rectangle</param>
         /// <param name="point">Current point</param>
-        /// <returns>Task</returns>
-        protected abstract ValueTask WriteInnerAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect, PdfPoint point);
+        /// <returns>Completed or not</returns>
+        protected abstract ValueTask<bool> WriteInnerAsync(IPdfPage page, PdfWriter writer, PdfStyle style, RectangleF rect, PdfPoint point);
     }
 }
