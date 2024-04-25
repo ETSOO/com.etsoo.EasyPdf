@@ -11,7 +11,7 @@ We were very confused about whether to reinvent the wheel (have learned a lot fr
 - Based on PDF 1.7 standards.
 - The library is licensed under MIT and permanently free.
 - Following similar HTML5 layout ideas, can easily generate PDF file from HTML content.
-- The output file size is as small as possible (example file with Chinese below is 163KB only).
+- The output file size is as small as possible (example file with Chinese below is 186KB only).
 - Keep the feature / code simple, easy to read and understood.
 	1. Only supports CIDFont based on TrueType.
 	2. Only supports JPEG / PNG images.
@@ -41,7 +41,7 @@ File.Delete(path);
 var stream = File.OpenWrite(path);
 
 // Turn on debug model
-PdfDocument.Debug = true;
+PdfDocument.Debug = false;
 
 // PDF document
 // All sizes are in points (pt) (1/72 inch)

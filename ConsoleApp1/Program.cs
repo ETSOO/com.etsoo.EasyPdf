@@ -10,7 +10,7 @@ File.Delete(path);
 var stream = File.OpenWrite(path);
 
 // Turn on debug model
-PdfDocument.Debug = true;
+//PdfDocument.Debug = true;
 
 // PDF document
 // All sizes are in points (pt) (1/72 inch)
