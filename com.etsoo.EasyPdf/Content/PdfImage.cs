@@ -3,6 +3,7 @@ using com.etsoo.EasyPdf.Objects;
 using com.etsoo.EasyPdf.Support;
 using com.etsoo.EasyPdf.Types;
 using com.etsoo.Utils;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -46,6 +47,18 @@ namespace com.etsoo.EasyPdf.Content
         {
             var image = await Image.LoadAsync(stream, cancellationToken);
             return new PdfImage(image);
+        }
+
+        /// <summary>
+        /// Load image from bytes
+        /// 从字节加载图片
+        /// </summary>
+        /// <param name="bytes">Image bytes</param>
+        /// <param name="cancellationToken">Cacellation token</param>
+        /// <returns>Result</returns>
+        public static Task<PdfImage> LoadAsync(ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken = default)
+        {
+            return LoadAsync(bytes.AsStream(), cancellationToken);
         }
 
         private static async Task<ReadOnlyMemory<byte>> ReadBytesAsync(Image image, IImageEncoder encoder)

@@ -26,10 +26,11 @@
     /// PDF line kind
     /// PDf 线条类型
     /// </summary>
+    [Flags]
     public enum PdfLineKind
     {
-        Underline,
-        LineThrough
+        Underline = 1,
+        LineThrough = 2
     }
 
     /// <summary>

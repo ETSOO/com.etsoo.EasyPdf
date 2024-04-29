@@ -14,7 +14,7 @@ namespace com.etsoo.EasyPdf.Content
         /// Color
         /// 颜色
         /// </summary>
-        public PdfColor Color { get; set; } = PdfColor.Black;
+        public PdfColor? Color { get; set; }
 
         /// <summary>
         /// Line width
@@ -37,12 +37,8 @@ namespace com.etsoo.EasyPdf.Content
 
             if (Style.Border == null)
             {
-                var border = new PdfStyleBorder(Color, Width);
-                border.Left.Width = 0;
-                border.Right.Width = 0;
-                border.Top.Width = 0;
-
-                Style.Border = border;
+                var color = Color ?? Style.BorderColor ?? PdfColor.Black;
+                Style.Border = new PdfStyleBorder(color, Width / 2);
             }
         }
     }

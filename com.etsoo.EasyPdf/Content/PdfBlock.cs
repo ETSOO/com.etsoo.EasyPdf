@@ -129,7 +129,7 @@ namespace com.etsoo.EasyPdf.Content
             // Border
             if (hasBorder && newLine == null)
             {
-                var adjust = PdfTextChunk.LineHeightAdjust + 1;
+                var adjust = line.Chunks.Length == 0 ? 0 : PdfTextChunk.LineHeightAdjust + 1;
 
                 // Start point
                 var startPoint = line.Chunks.FirstOrDefault()?.StartPoint ?? StartPoint;
@@ -182,7 +182,8 @@ namespace com.etsoo.EasyPdf.Content
             }
 
             // Rectangle
-            var (layout, rect) = style.GetRectangle(page.ContentRect.Size, page.CurrentPoint);
+            var container = style.Position == PdfPosition.Absolute ? page.PageFullRect : page.ContentRect;
+            var (layout, rect) = style.GetRectangle(container, page);
             this.layout = layout;
 
             BottomAdjust = layout.Bottom - rect.Bottom;

@@ -20,11 +20,11 @@ We were very confused about whether to reinvent the wheel (have learned a lot fr
 # Milestones
 - 2022/06/14 Start exploring PDF standards and code examples.
 - 2024/03/18 Kickoff reinventing the wheel with .NET 8 + AOT supports.
-- 2024/04/25 A simple layout with text and images is ready.
+- 2024/04/29 A simple layout with text and images is ready.
 
 # Quick example
 
-A console example to demonstrate the library:
+A console example to demonstrate the library with code and html parser generating same layout PDF files:
 
 [![](https://github.com/ETSOO/com.etsoo.EasyPdf/blob/master/example.png)](https://www.etsoo.com)
 
@@ -94,7 +94,7 @@ hr.Style.SetOpacity(0.5f);
 await w.WriteAsync(hr);
 
 var p2 = new PdfParagraph();
-p2.Add("青岛亿速思维\n网络科技有限公司 粗体").Style.SetFontStyle(PdfFontStyle.Bold);
+p2.Add("青岛亿速思维网络科技有限公司 粗体").Style.SetFontStyle(PdfFontStyle.Bold);
 p2.Add(PdfLineBreak.New);
 p2.Add("青岛亿速思维网络科技有限公司 斜体").Style.SetFontStyle(PdfFontStyle.Italic);
 p2.Add(PdfLineBreak.New);
@@ -113,7 +113,8 @@ await w.WriteAsync(p5);
 
 var p6 = new PdfParagraph();
 p6.Style.SetPosition(PdfPosition.Absolute)
-    .SetTop(200)
+    .SetLeft(0)
+    .SetTop(260)
     .SetFontSize(36)
     .SetColor(new PdfColor(255, 0, 0))
     .SetOpacity(0.1f)
@@ -131,6 +132,14 @@ await w.WriteAsync(p7);
 // Dispose
 await pdf.DisposeAsync();
 
-Console.WriteLine("Done!");
-Console.ReadLine();
+Console.WriteLine("PDF example done!");
+
+// Parse HTML to PDF
+var path1 = "D:\\a1.pdf";
+File.Delete(path1);
+
+var htmlPath = $"{resourcePath}\\etsoo.htm";
+await PdfDocumentHtmlParser.ParseAsync(resourcePath, File.OpenRead(htmlPath), File.OpenWrite(path1));
+
+Console.WriteLine("PDF created from HTML done!");
 ```

@@ -92,6 +92,8 @@
         /// </summary>
         public float? A { get; }
 
+        private static readonly char[] separators = [' ', ','];
+
         private static byte ParseColor(string part, byte multiplier = 255)
         {
             if (part.EndsWith('%'))
@@ -123,21 +125,23 @@
                 return new PdfColor(r, g, b);
             }
 
-            if (colorText.StartsWith("rgb("))
+            if (colorText.StartsWith("rgb(") || colorText.StartsWith("rgba("))
             {
-                var parts = colorText[4..^1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if ((shortCase = parts.Length == 3) || parts.Length == 5)
+                var start = colorText.IndexOf('(') + 1;
+                var parts = colorText[start..^1].Split(separators, StringSplitOptions.RemoveEmptyEntries);
+                var len = parts.Length;
+                if (len is >= 3 and <= 5)
                 {
                     var r = ParseColor(parts[0]);
                     var g = ParseColor(parts[1]);
                     var b = ParseColor(parts[2]);
-                    if (shortCase)
+                    if (len == 3)
                     {
                         return new PdfColor(r, g, b);
                     }
                     else
                     {
-                        var a = ParseColor(parts[4], 1);
+                        var a = ParseColor(len == 4 ? parts[3] : parts[4], 1);
                         return new PdfColor(r, g, b, a);
                     }
                 }
@@ -186,7 +190,7 @@
         /// <returns>Result</returns>
         public override string ToString()
         {
-            return $"{R / 255.0f} {G / 255.0f} {B / 255.0f}{(A.HasValue ? $" {A}" : "")}";
+            return $"{R / 255.0f} {G / 255.0f} {B / 255.0f}";
         }
     }
 }

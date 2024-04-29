@@ -101,6 +101,39 @@ namespace com.etsoo.EasyPdf.Content
         }
 
         /// <summary>
+        /// Set bold style
+        /// 设置粗体样式
+        /// </summary>
+        /// <returns>Result</returns>
+        public PdfTextChunk SetBold()
+        {
+            Style.SetFontStyle(PdfFontStyle.Bold);
+            return this;
+        }
+
+        /// <summary>
+        /// Set italic style
+        /// 设置斜体样式
+        /// </summary>
+        /// <returns>Result</returns>
+        public PdfTextChunk SetItalic()
+        {
+            Style.SetFontStyle(PdfFontStyle.Italic);
+            return this;
+        }
+
+        /// <summary>
+        /// Set underline style
+        /// 设置下划线样式
+        /// </summary>
+        /// <returns>Result</returns>
+        public PdfTextChunk SetUnderline()
+        {
+            Style.SetTextDecoration(PdfLineKind.Underline);
+            return this;
+        }
+
+        /// <summary>
         /// Local operators setup
         /// 本地操作设置
         /// </summary>

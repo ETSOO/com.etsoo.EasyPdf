@@ -31,6 +31,12 @@ namespace com.etsoo.EasyPdf.Objects
         RectangleF ContentRect { get; }
 
         /// <summary>
+        /// Page's full rectangle
+        /// 页面的完整矩形
+        /// </summary>
+        RectangleF PageFullRect { get; }
+
+        /// <summary>
         /// Page data
         /// 页面数据
         /// </summary>

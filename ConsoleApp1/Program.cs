@@ -3,6 +3,9 @@ using com.etsoo.EasyPdf.Content;
 using com.etsoo.EasyPdf.Support;
 using System.Globalization;
 
+// Local resource path
+var resourcePath = Path.GetFullPath("./../../../../com.etsoo.EasyPdf.Tests/Resources/html/");
+
 var path = "D:\\a.pdf";
 File.Delete(path);
 
@@ -10,7 +13,7 @@ File.Delete(path);
 var stream = File.OpenWrite(path);
 
 // Turn on debug model
-//PdfDocument.Debug = true;
+PdfDocument.Debug = true;
 
 // PDF document
 // All sizes are in points (pt) (1/72 inch)
@@ -40,7 +43,7 @@ var w = await pdf.GetWriterAsync((page) =>
 
 // Paragraphs
 var p1 = new PdfDiv();
-var img = await PdfImage.LoadAsync("D:\\etsoo.png");
+var img = await PdfImage.LoadAsync($"{resourcePath}\\etsoo.png");
 img.Style.SetHeight(40).SetOpacity(0.9f);
 p1.Add(img);
 //p1.Style.SetBorder(PdfColor.Red).SetBackgroundColor("#f3f3f3").SetPadding(6);
@@ -63,7 +66,7 @@ hr.Style.SetOpacity(0.5f);
 await w.WriteAsync(hr);
 
 var p2 = new PdfParagraph();
-p2.Add("青岛亿速思维\n网络科技有限公司 粗体").Style.SetFontStyle(PdfFontStyle.Bold);
+p2.Add("青岛亿速思维网络科技有限公司 粗体").Style.SetFontStyle(PdfFontStyle.Bold);
 p2.Add(PdfLineBreak.New);
 p2.Add("青岛亿速思维网络科技有限公司 斜体").Style.SetFontStyle(PdfFontStyle.Italic);
 p2.Add(PdfLineBreak.New);
@@ -82,7 +85,8 @@ await w.WriteAsync(p5);
 
 var p6 = new PdfParagraph();
 p6.Style.SetPosition(PdfPosition.Absolute)
-    .SetTop(200)
+    .SetLeft(0)
+    .SetTop(260)
     .SetFontSize(36)
     .SetColor(new PdfColor(255, 0, 0))
     .SetOpacity(0.1f)
@@ -100,5 +104,15 @@ await w.WriteAsync(p7);
 // Dispose
 await pdf.DisposeAsync();
 
-Console.WriteLine("Done!");
+Console.WriteLine("PDF example done!");
+
+// Parse HTML to PDF
+var path1 = "D:\\a1.pdf";
+File.Delete(path1);
+
+var htmlPath = $"{resourcePath}\\etsoo.htm";
+await PdfDocumentHtmlParser.ParseAsync(File.OpenRead(htmlPath), resourcePath, File.OpenWrite(path1));
+
+Console.WriteLine("PDF created from HTML done!");
+
 Console.ReadLine();

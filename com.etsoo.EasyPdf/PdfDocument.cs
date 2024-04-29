@@ -52,7 +52,6 @@ namespace com.etsoo.EasyPdf
         /// </summary>
         public PdfStyle Style { get; } = new()
         {
-            Font = "Arial",
             // 12pt = 16px
             FontSize = 12,
             Padding = new PdfStyleSpace(40)

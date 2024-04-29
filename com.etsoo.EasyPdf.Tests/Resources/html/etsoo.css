@@ -1,0 +1,102 @@
+@font-face {
+    font-family: "Microsoft YaHei";
+    src: local("msyh.ttc");
+}
+
+html {
+    width: 595pt;
+    height: 842pt;
+    box-sizing: border-box;
+    font-size: 12pt;
+    border: 6pt solid #ff0000;
+    margin: 0px;
+    padding: 40pt;
+}
+
+p {
+    margin: 12pt 0pt;
+}
+
+hr {
+    border-width: 0.5pt;
+}
+
+h1 {
+    font-weight: bold;
+    font-size: 24pt;
+    margin: 8pt 0pt;
+}
+
+    h1 sub, h1 sup {
+        font-size: 15.6pt;
+    }
+
+h2 {
+    font-weight: bold;
+    font-size: 18pt;
+    margin: 10pt 0pt;
+}
+
+h3 {
+    font-weight: bold;
+    font-size: 14pt;
+    margin: 12pt 0pt;
+}
+
+h4 {
+    font-weight: bold;
+    font-size: 12pt;
+    margin: 16pt 0pt;
+}
+
+h5 {
+    font-weight: bold;
+    font-size: 10pt;
+    margin: 20pt 0pt;
+}
+
+h6 {
+    font-weight: bold;
+    font-size: 8pt;
+    margin: 28pt 0pt;
+}
+
+.hr {
+    border-color: red;
+    opacity: 0.5;
+}
+
+.info {
+    font-size: 10pt;
+    line-height: 15pt;
+    background-color: #f6f6f6;
+    padding: 6pt;
+    text-align: justify;
+    border: 0.75pt dotted blue;
+}
+
+.link {
+    font-size: 9pt;
+    text-align: end;
+}
+
+.logo {
+    height: 40pt;
+    opacity: 0.9;
+}
+
+.title {
+    text-align: center;
+}
+
+.watermark {
+    position: absolute;
+    left: 0px;
+    top: 260pt;
+    font-size: 36pt;
+    color: #ff0000;
+    opacity: 0.1;
+    width: 595pt;
+    text-align: center;
+    transform: rotate(-45deg);
+}

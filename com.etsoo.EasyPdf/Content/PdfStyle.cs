@@ -1,5 +1,6 @@
-﻿using com.etsoo.EasyPdf.Support;
+﻿using com.etsoo.EasyPdf.Objects;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 namespace com.etsoo.EasyPdf.Content
 {
@@ -12,8 +13,53 @@ namespace com.etsoo.EasyPdf.Content
     /// 构造函数
     /// </remarks>
     /// <param name="parent">Parent style</param>
-    public class PdfStyle(PdfStyle? parent = null)
+    public partial class PdfStyle(PdfStyle? parent = null)
     {
+        /// <summary>
+        /// Parse border from definition
+        /// 从定义中解析边框
+        /// </summary>
+        /// <param name="border">Border definition</param>
+        /// <param name="width">Defalt width</param>
+        /// <param name="style">Default border style</param>
+        /// <returns>Result</returns>
+        public static PdfStyleBorder ParseBorder(string border, float width, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid, PdfColor? borderColor = null)
+        {
+            var color = PdfColor.Parse(border);
+            if (color.HasValue)
+            {
+                return new PdfStyleBorder(color.Value, width, style);
+            }
+            else
+            {
+                var parts = MyRegex().Split(border);
+                foreach (var part in parts)
+                {
+                    if (Enum.TryParse<PdfStyleBorderStyle>(part, true, out var newStyle))
+                    {
+                        style = newStyle;
+                    }
+                    else if (part.EndsWith("px"))
+                    {
+                        if (float.TryParse(part[..^2], out var newWidth))
+                        {
+                            width = newWidth.PixelToPt();
+                        }
+                    }
+                    else
+                    {
+                        var newColor = PdfColor.Parse(part);
+                        if (newColor.HasValue)
+                        {
+                            color = newColor.Value;
+                        }
+                    }
+                }
+
+                return new PdfStyleBorder(color ?? borderColor ?? PdfColor.Black, width, style);
+            }
+        }
+
         /// <summary>
         /// Parent style
         /// 父样式
@@ -92,13 +138,62 @@ namespace com.etsoo.EasyPdf.Content
         /// Set border
         /// 设置边框
         /// </summary>
-        /// <param name="color">Border color</param>
+        /// <param name="color">Border color or full definition</param>
         /// <param name="width">Width</param>
         /// <param name="style">Style</param>
         /// <returns>Style</returns>
-        public PdfStyle SetBorder(string color, float width = 1, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
+        public PdfStyle SetBorder(string colorOrDefinition, float? width = null, PdfStyleBorderStyle style = PdfStyleBorderStyle.Solid)
         {
-            Border = new PdfStyleBorder(PdfColor.Parse(color) ?? PdfColor.Black, width, style);
+            var w = width ?? BorderWidth ?? 1;
+            Border = ParseBorder(colorOrDefinition, w, style, BorderColor);
+            return this;
+        }
+
+        /// <summary>
+        /// Border color
+        /// 边框颜色
+        /// </summary>
+        public PdfColor? BorderColor { get; set; }
+
+        /// <summary>
+        /// Set border color
+        /// 设置边框颜色
+        /// </summary>
+        /// <param name="color">Color</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBorderColor(PdfColor? color)
+        {
+            BorderColor = color;
+            return this;
+        }
+
+        /// <summary>
+        /// Set border color
+        /// 设置边框颜色
+        /// </summary>
+        /// <param name="color">Color text</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBorderColor(string? color)
+        {
+            BorderColor = string.IsNullOrEmpty(color) ? null : PdfColor.Parse(color);
+            return this;
+        }
+
+        /// <summary>
+        /// Border width
+        /// 边框宽度
+        /// </summary>
+        public float? BorderWidth { get; set; }
+
+        /// <summary>
+        /// Set border with
+        /// 设置边框宽度
+        /// </summary>
+        /// <param name="width">Width</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetBorderWidth(float? width)
+        {
+            BorderWidth = width;
             return this;
         }
 
@@ -182,7 +277,15 @@ namespace com.etsoo.EasyPdf.Content
         /// <returns>Style</returns>
         public PdfStyle SetFontStyle(PdfFontStyle? fontStyle)
         {
-            FontStyle = fontStyle;
+            if (FontStyle == null || fontStyle == null)
+            {
+                FontStyle = fontStyle;
+            }
+            else
+            {
+                FontStyle |= fontStyle;
+            }
+
             return this;
         }
 
@@ -359,6 +462,25 @@ namespace com.etsoo.EasyPdf.Content
         }
 
         /// <summary>
+        /// Set position
+        /// 设置位置
+        /// </summary>
+        /// <param name="position">Position</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetPosition(string position)
+        {
+            if (Enum.TryParse<PdfPosition>(position, true, out var pos))
+            {
+                Position = pos;
+            }
+            else
+            {
+                Position = null;
+            }
+            return this;
+        }
+
+        /// <summary>
         /// Opacity, 0 - 1 number
         /// 不透明度
         /// </summary>
@@ -414,6 +536,30 @@ namespace com.etsoo.EasyPdf.Content
         public PdfStyle SetTextAlign(PdfTextAlign? textAlign)
         {
             TextAlign = textAlign;
+            return this;
+        }
+
+        /// <summary>
+        /// Set text align
+        /// 设置文本对齐
+        /// </summary>
+        /// <param name="textAlign">Text align</param>
+        /// <returns>Style</returns>
+        public PdfStyle SetTextAlign(string textAlign)
+        {
+            if (string.IsNullOrEmpty(textAlign))
+            {
+                TextAlign = null;
+            }
+            else
+            {
+                if (textAlign.Equals("right", StringComparison.OrdinalIgnoreCase)) textAlign = "end";
+                else if (textAlign.Equals("left", StringComparison.OrdinalIgnoreCase)) textAlign = "start";
+                else if (textAlign.Equals("full", StringComparison.OrdinalIgnoreCase)) textAlign = "justify";
+
+                TextAlign = Enum.TryParse<PdfTextAlign>(textAlign, true, out var align) ? align : null;
+            }
+
             return this;
         }
 
@@ -574,13 +720,13 @@ namespace com.etsoo.EasyPdf.Content
         /// Get rectangle
         /// 获取矩形
         /// </summary>
-        /// <param name="size">Container size</param>
-        /// <param name="point">Start point inside the rectangle</param>
+        /// <param name="rect">Container rectangle</param>
+        /// <param name="page">Current page</param>
         /// <returns>Result</returns>
-        public (RectangleF layout, RectangleF rect) GetRectangle(SizeF? size = null, PdfPoint? point = null)
+        public (RectangleF layout, RectangleF rect) GetRectangle(RectangleF rect, IPdfPage? page = null)
         {
-            var width = Width ?? size?.Width ?? 0;
-            var height = Height ?? size?.Height ?? 0;
+            var width = Width ?? rect.Width;
+            var height = Height ?? rect.Height;
 
             var marginLeft = Margin?.Left ?? 0;
             var marginTop = Margin?.Top ?? 0;
@@ -596,12 +742,16 @@ namespace com.etsoo.EasyPdf.Content
             width -= marginLeft + marginRight;
             height -= marginTop + marginBottom;
 
+            var point = page?.CurrentPoint;
             float left, top;
 
             if (PdfPosition.Absolute.Equals(Position))
             {
-                left = Left.GetValueOrDefault() + marginLeft;
-                top = Top.GetValueOrDefault() + marginTop;
+                ArgumentNullException.ThrowIfNull(page);
+                var contentRect = page.ContentRect;
+
+                left = Left.GetValueOrDefault(point == null ? 0 : (point.X + contentRect.Left)) + marginLeft - contentRect.Left;
+                top = Top.GetValueOrDefault(point == null ? 0 : (point.Y + contentRect.Top)) + marginTop - contentRect.Top;
             }
             else if (PdfPosition.Relative.Equals(Position))
             {
@@ -696,5 +846,8 @@ namespace com.etsoo.EasyPdf.Content
 
             return (width, height);
         }
+
+        [GeneratedRegex(@"\s+(?![^()]*\))")]
+        private static partial Regex MyRegex();
     }
 }

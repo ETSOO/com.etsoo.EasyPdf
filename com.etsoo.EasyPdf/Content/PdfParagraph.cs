@@ -4,7 +4,7 @@
     /// PDF paragraph, behaves like HTML P
     /// PDF 段落
     /// </summary>
-    public class PdfParagraph : PdfDiv
+    public class PdfParagraph : PdfRichBlock
     {
         public PdfParagraph() : base()
         {

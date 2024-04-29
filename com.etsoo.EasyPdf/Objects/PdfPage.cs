@@ -84,6 +84,14 @@ namespace com.etsoo.EasyPdf.Objects
         /// </summary>
         public PdfStyle Style { get; }
 
+        private RectangleF pageFullRect;
+
+        /// <summary>
+        /// Page's full rectangle
+        /// 页面的完整矩形
+        /// </summary>
+        public RectangleF PageFullRect => pageFullRect;
+
         private RectangleF contentRect;
 
         /// <summary>
@@ -268,11 +276,14 @@ namespace com.etsoo.EasyPdf.Objects
             // Page style
             var style = Style.GetComputedStyle();
 
+            // Page rectangle
+            pageFullRect = new RectangleF(PointF.Empty, Data.PageSize);
+
             // Document
             var doc = writer.Document;
 
             // Document rectangle, based on page size
-            var (docRect, _) = doc.Style.GetRectangle(Data.PageSize);
+            var (docRect, _) = doc.Style.GetRectangle(pageFullRect);
 
             // Document border & background
             await WriteBorderAndBackgroundAsync(doc.Style, docRect);
